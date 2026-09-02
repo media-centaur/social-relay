@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: shipped
 started: 2026-09-02
 last_updated: 2026-09-02
 ---
@@ -21,7 +21,9 @@ A friend group runs one container with a list of member keys and gets a private 
 
 ## Status
 
-In progress. Steps 1 to 4 done 2026-09-02 and pushed to `github.com/media-centaur/social-relay`: module pinned, bbolt store, TOML config (`name`, `listen`, `database`, `service_url`, `members`), NIP-11 advertising 1/11/42, replace semantics, challenge on connect, membership gating of reads and writes, kind 32160 only, service URL check. Step 5 done 2026-09-02: scratch image (uid 65532, 4.5 MB, built and smoke-run locally), `deploy/` compose with Caddy, release workflow (binaries plus GHCR image on `v*` tags), `docs/operating.md`, README, auth logging. Step 6 done 2026-09-02: dev app on `:2160` added `ws://127.0.0.1:2173`, relay log showed its npub authenticating as a member, the Social row read **Connected**, the Status drill-in read *Connected to 1 of 1 relays · 1 sent*, a recommendation sent from a library title reached a scripted second member through the relay (kind 32160, `d` = `tmdb:movie:…`). No app-side change. `docs/protocol.md` written and cross-checked against `docs/social.md`. The test relay was removed from the dev app afterwards; the recommendation it created remains in the dev database. Step 7 (release, wiki) is next.
+In progress. Steps 1 to 4 done 2026-09-02 and pushed to `github.com/media-centaur/social-relay`: module pinned, bbolt store, TOML config (`name`, `listen`, `database`, `service_url`, `members`), NIP-11 advertising 1/11/42, replace semantics, challenge on connect, membership gating of reads and writes, kind 32160 only, service URL check. Step 5 done 2026-09-02: scratch image (uid 65532, 4.5 MB, built and smoke-run locally), `deploy/` compose with Caddy, release workflow (binaries plus GHCR image on `v*` tags), `docs/operating.md`, README, auth logging. Step 6 done 2026-09-02: dev app on `:2160` added `ws://127.0.0.1:2173`, relay log showed its npub authenticating as a member, the Social row read **Connected**, the Status drill-in read *Connected to 1 of 1 relays · 1 sent*, a recommendation sent from a library title reached a scripted second member through the relay (kind 32160, `d` = `tmdb:movie:…`). No app-side change. `docs/protocol.md` written and cross-checked against `docs/social.md`. The test relay was removed from the dev app afterwards; the recommendation it created remains in the dev database. Step 7 done 2026-09-02: tag `v0.1.0`, release workflow green (binaries with `SHA256SUMS`, multi-arch image `ghcr.io/media-centaur/social-relay:0.1.0` and `:latest`, `-version` prints `v0.1.0`). Wiki page *Hosting a Private Relay* plus Social and sidebar edits committed in `../media-centaur.wiki` (`c5c41b9`), **not pushed**: that repository carries four unpushed commits from the app-side session, and pushing would publish those too.
+
+**Left for the owner:** the GHCR package was created private (anonymous pull denied); make it public under the org's package settings, otherwise the compose example cannot pull. Push the wiki. Then delete this file per `campaigns/README.md`.
 
 Layout: `cmd/social-relay` (flag `-config`, graceful shutdown), `internal/relay` (`config.go`, `relay.go` wiring, `membership.go`, `kinds.go`), tests in `internal/relay/*_test.go` through `httptest.NewServer` and a raw WebSocket client (`client_test.go`) that answers AUTH and waits for its `OK` the way the app does.
 
@@ -65,7 +67,7 @@ From `../media-centaur-app/lib/media_centaur/nostr/connection.ex` and `docs/soci
 4. ~~Done 2026-09-02.~~ Service URL check (`service_url`, required, ws or wss). khatru sets `Relay.ServiceURL` and compares through `nip42.ValidateAuthEvent`, which lowercases both sides, strips one trailing slash, and requires equal scheme, host and path. Setting `ServiceURL` also restricts the WebSocket and NIP-11 handlers to that path. Make it the config key `service_url`; test trailing slash, case, and `ws://` vs `wss://` (must differ).
 5. ~~Done 2026-09-02.~~ Container image (scratch, non-root; config bind-mounted read-only at `/etc/social-relay/relay.toml`, database on the `/data` volume), `deploy/` compose example with Caddy, `docs/operating.md`, `scripts/build-release`, `.github/workflows/release.yml`.
 6. ~~Done 2026-09-02.~~ End to end against the dev app on `:2160`, then write `docs/protocol.md` and cross-check it against `docs/social.md` line by line. Observed: the app stores a URL typed without a trailing slash with one (`ws://127.0.0.1:2173/`) and authenticates twice on connect; both accepted.
-7. Tag a release (set `Info.Version` from build info; it reads `n/a` today); wiki page *Hosting a private relay* in `../media-centaur.wiki`.
+7. ~~Done 2026-09-02, wiki push pending.~~ Tag a release (version reaches NIP-11 via `-ldflags -X main.version`, falling back to the VCS-stamped module version); wiki page *Hosting a private relay* in `../media-centaur.wiki`.
 
 ## Open questions
 
@@ -82,10 +84,10 @@ Items that need an app-side change. Move each to the app campaign `../media-cent
 
 ## Completion criteria
 
-* `docker run` with a mounted config file yields a relay that challenges on connect, refuses `REQ` and `EVENT` from non-members, stores kind 32160 with replace semantics, and rejects every other kind.
-* A recommendation sent from the dev app is received by a second client (a second app instance or a scripted go-nostr client) through this relay, with no app-side change.
-* A tagged release with a container image on GHCR, and the wiki page.
-* `docs/protocol.md` exists and agrees with `docs/social.md`.
+* ✅ `docker run` with a mounted config file yields a relay that challenges on connect, refuses `REQ` and `EVENT` from non-members, stores kind 32160 with replace semantics, and rejects every other kind. (Tests in `internal/relay`; image smoke-run 2026-09-02.)
+* ✅ A recommendation sent from the dev app is received by a second client through this relay, with no app-side change. (Scripted member client, 2026-09-02.)
+* ✅ A tagged release with a container image on GHCR (`v0.1.0`; package visibility to be set public by the owner). ⏳ Wiki page written, push pending.
+* ✅ `docs/protocol.md` exists and agrees with `docs/social.md`.
 
 ## Pointers
 
