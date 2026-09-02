@@ -2,9 +2,9 @@
 
 # social-relay
 
-The allowlist Nostr relay for Media Centaur's friend network. A friend group runs one instance; each member pastes its URL into Media Centaur's Friends tab; only allowlisted public keys can read or write, and only the event kinds Media Centaur uses are stored. This is the **private relay** half of the app's "control on a slider" design. Public relays are the other half and are not this repo's concern.
+The allowlist Nostr relay for Media Centaur's **Social** subsystem (identity, relays, friends, recommendations). A friend group runs one instance; each member pastes its URL into Media Centaur's Social tab; only allowlisted public keys can read or write, and only the event kinds Media Centaur uses are stored. This is the **private relay** half of the app's "control on a slider" design. Public relays are the other half and are not this repo's concern.
 
-The client is `MediaCentaur.Nostr` and `MediaCentaur.Friends` in the sibling repo `../media-centaur-app`. Its side of the contract is documented in `../media-centaur-app/docs/friends.md` (sections Transport, Event shape, Sync). This repo's side lives in `docs/protocol.md` once written. The two must agree; when one changes, change the other in the same unit of work.
+The client is `MediaCentaur.Nostr` and `MediaCentaur.Social` in the sibling repo `../media-centaur-app`. Its side of the contract is documented in `../media-centaur-app/docs/social.md` (sections Transport, Event shape, Sync). This repo's side lives in `docs/protocol.md` once written. The two must agree; when one changes, change the other in the same unit of work.
 
 ## Stack
 
@@ -24,6 +24,10 @@ The client is `MediaCentaur.Nostr` and `MediaCentaur.Friends` in the sibling rep
 
 ## Cross-repo verification
 
-The app's dev server runs at `http://localhost:2160` (systemd user unit `media-centaur-dev`, real database). End-to-end check for any change that touches authentication or acceptance: run the relay locally, add `ws://127.0.0.1:<port>` on the app's Friends tab, and confirm the relay log shows the app's public key authenticating and the app's Status page Friends tile reads connected.
+The app's dev server runs at `http://localhost:2160` (systemd user unit `media-centaur-dev`, real database). End-to-end check for any change that touches authentication or acceptance: run the relay locally, add `ws://127.0.0.1:<port>` on the app's Social tab, and confirm the relay log shows the app's public key authenticating and the app's Status page Social tile reads connected.
 
 A change that alters what the relay accepts, how it authenticates, or what it answers on rejection is a cross-repo change. Record it in the campaign under **Cross-repo** so the app-side work is not lost.
+
+## Vocabulary
+
+The app's glossary (`../media-centaur-app/docs/GLOSSARY.md`) governs. **Social** is the subsystem; a **friend** is one roster entry; a **member** is a key on this relay's allowlist. Do not use "friends" for the subsystem.

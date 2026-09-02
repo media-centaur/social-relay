@@ -29,12 +29,12 @@ Reconciled 2026-09-02 against the live khatru module before the first line of co
 
 ## Client contract (facts the relay must honour)
 
-From `../media-centaur-app/lib/media_centaur/nostr/connection.ex` and `docs/friends.md` as of 2026-09-02.
+From `../media-centaur-app/lib/media_centaur/nostr/connection.ex` and `docs/social.md` as of 2026-09-02.
 
 - The client answers any `AUTH` challenge immediately with a kind `22242` event whose `relay` tag is the URL exactly as the user configured it. It does **not** re-authenticate in response to a `CLOSED` or `OK` carrying an `auth-required:` prefix. So the relay must challenge on connect.
 - After a successful `AUTH` (an `OK` for the auth event with `true`) the client re-issues every subscription it holds. So refusing a `REQ` that arrived before auth is harmless.
 - On `OK … false` for the auth event the client enters `auth_failed`, which the app surfaces as the incident *Relay rejected this identity*. This is the only path that surfaces as an auth failure in the app.
-- A `CLOSED` on any subscription is folded into the relay row's `last_error` and shown on the Friends tab. The connection state stays connected.
+- A `CLOSED` on any subscription is folded into the relay row's `last_error` and shown on the Social tab. The connection state stays connected.
 - Subscriptions: `feed` (authors = friends plus self, kind 32160) and `own:<url>` (authors = self). On `EOSE` for `own:<url>` the client publishes every stored own event the relay did not return. Correct `EOSE` and correct addressable semantics therefore matter: a relay that fails to return an event it holds gets it published again, and one that appends instead of replacing returns duplicates.
 - Publishes are casts; the client reads the relay's verdict from `OK`.
 - Reconnect backoff is 1 s doubling to 60 s. Mint's connect timeout is capped at 5 s.
@@ -60,7 +60,7 @@ From `../media-centaur-app/lib/media_centaur/nostr/connection.ex` and `docs/frie
 3. Kind restriction. Kind 1 rejected with `blocked:`; kind 32160 accepted.
 4. Service URL check. khatru sets `Relay.ServiceURL` and compares through `nip42.ValidateAuthEvent`, which lowercases both sides, strips one trailing slash, and requires equal scheme, host and path. Setting `ServiceURL` also restricts the WebSocket and NIP-11 handlers to that path. Make it the config key `service_url`; test trailing slash, case, and `ws://` vs `wss://` (must differ).
 5. Container image (scratch, non-root, config and database on a volume), a compose example with a reverse proxy, `docs/operating.md`.
-6. End to end against the dev app on `:2160`, then write `docs/protocol.md` and cross-check it against `docs/friends.md` line by line.
+6. End to end against the dev app on `:2160`, then write `docs/protocol.md` and cross-check it against `docs/social.md` line by line.
 7. Tag a release (set `Info.Version` from build info; it reads `n/a` today); wiki page *Hosting a private relay* in `../media-centaur.wiki`.
 
 ## Open questions
@@ -81,11 +81,12 @@ Items that need an app-side change. Move each to the app campaign `../media-cent
 * `docker run` with a mounted config file yields a relay that challenges on connect, refuses `REQ` and `EVENT` from non-members, stores kind 32160 with replace semantics, and rejects every other kind.
 * A recommendation sent from the dev app is received by a second client (a second app instance or a scripted go-nostr client) through this relay, with no app-side change.
 * A tagged release with a container image on GHCR, and the wiki page.
-* `docs/protocol.md` exists and agrees with `docs/friends.md`.
+* `docs/protocol.md` exists and agrees with `docs/social.md`.
 
 ## Pointers
 
-* App contributor guide: `../media-centaur-app/docs/friends.md`.
+* App contributor guide: `../media-centaur-app/docs/social.md`.
+* App glossary: `../media-centaur-app/docs/GLOSSARY.md`.
 * App design spec: `../media-centaur-app/docs/superpowers/specs/2026-09-02-friends-recommendations-design.md`.
 * App campaign: `../media-centaur-app/campaigns/friends-recommendations.md`.
 * App test relay (the subset the client uses, in Elixir): `../media-centaur-app/test/support/nostr/fake_relay.ex`.

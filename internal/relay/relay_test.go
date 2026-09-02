@@ -18,11 +18,12 @@ import (
 const kindRecommendation = nostr.Kind(32160)
 
 // startRelay runs an in-process relay on a loopback port and returns its ws:// URL.
-func startRelay(t *testing.T) string {
+func startRelay(t *testing.T, members ...nostr.PubKey) string {
 	t.Helper()
 	r, err := relay.New(relay.Config{
 		Name:     "test relay",
 		Database: filepath.Join(t.TempDir(), "events.db"),
+		Members:  members,
 	})
 	if err != nil {
 		t.Fatalf("relay.New: %v", err)
@@ -42,6 +43,33 @@ func connect(t *testing.T, url string) *nostr.Relay {
 		t.Fatalf("connect %s: %v", url, err)
 	}
 	t.Cleanup(func() { c.Close() })
+	return c
+}
+
+// authenticate answers the relay's NIP-42 challenge with sk. The challenge is sent on
+// connect, so the first attempts may race it; retry until the client has one.
+func authenticate(t *testing.T, c *nostr.Relay, sk nostr.SecretKey) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		err := c.Auth(ctx, func(_ context.Context, evt *nostr.Event) error { return evt.Sign(sk) })
+		cancel()
+		if err == nil {
+			return
+		}
+		if !strings.Contains(err.Error(), "no challenge") || time.Now().After(deadline) {
+			t.Fatalf("auth: %v", err)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+// connectAs opens a connection and authenticates it as sk.
+func connectAs(t *testing.T, url string, sk nostr.SecretKey) *nostr.Relay {
+	t.Helper()
+	c := connect(t, url)
+	authenticate(t, c, sk)
 	return c
 }
 
@@ -112,14 +140,14 @@ func TestRelayInformationDocumentNamesRelayAndSupportedNIPs(t *testing.T) {
 }
 
 func TestStoresRecommendationAndReturnsItBeforeEOSE(t *testing.T) {
-	url := startRelay(t)
 	sk := nostr.Generate()
-	c := connect(t, url)
+	url := startRelay(t, sk.Public())
+	c := connectAs(t, url, sk)
 
 	evt := recommendation(t, sk, "tmdb:movie:1", nostr.Now())
 	publish(t, c, evt)
 
-	got := storedEvents(t, connect(t, url), nostr.Filter{
+	got := storedEvents(t, connectAs(t, url, sk), nostr.Filter{
 		Kinds:   []nostr.Kind{kindRecommendation},
 		Authors: []nostr.PubKey{sk.Public()},
 	})
@@ -129,16 +157,16 @@ func TestStoresRecommendationAndReturnsItBeforeEOSE(t *testing.T) {
 }
 
 func TestNewerEventWithSameAddressReplacesOlder(t *testing.T) {
-	url := startRelay(t)
 	sk := nostr.Generate()
-	c := connect(t, url)
+	url := startRelay(t, sk.Public())
+	c := connectAs(t, url, sk)
 
 	older := recommendation(t, sk, "tmdb:tv:2", nostr.Now()-10)
 	newer := recommendation(t, sk, "tmdb:tv:2", nostr.Now())
 	publish(t, c, older)
 	publish(t, c, newer)
 
-	got := storedEvents(t, connect(t, url), nostr.Filter{
+	got := storedEvents(t, connectAs(t, url, sk), nostr.Filter{
 		Kinds:   []nostr.Kind{kindRecommendation},
 		Authors: []nostr.PubKey{sk.Public()},
 	})
@@ -148,10 +176,10 @@ func TestNewerEventWithSameAddressReplacesOlder(t *testing.T) {
 }
 
 func TestEmptyStoreAnswersWithEOSEOnly(t *testing.T) {
-	url := startRelay(t)
 	sk := nostr.Generate()
+	url := startRelay(t, sk.Public())
 
-	got := storedEvents(t, connect(t, url), nostr.Filter{
+	got := storedEvents(t, connectAs(t, url, sk), nostr.Filter{
 		Kinds:   []nostr.Kind{kindRecommendation},
 		Authors: []nostr.PubKey{sk.Public()},
 	})
