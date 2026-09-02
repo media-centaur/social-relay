@@ -10,11 +10,11 @@ Needs a hostname pointing at the machine, ports 80 and 443 open, and Docker with
 
 1. Copy [`deploy/`](deploy) somewhere: `compose.yml`, `Caddyfile`, `relay.toml`.
 2. `Caddyfile`: replace `relay.example.com` with your hostname.
-3. `relay.toml`: set `service_url = "wss://<your hostname>"` and list every member's npub under `members`. Members find theirs under **Discovery → Social → Your identity**.
+3. `relay.toml`: set `service_url = "wss://<your hostname>"` and list every member's npub under `members`. Members find theirs under **Settings → Social → Your identity**.
 4. `docker compose up -d`
 5. Check: `curl -H 'Accept: application/nostr+json' https://<your hostname>` returns a JSON document.
 
-Members add `wss://<your hostname>` under **Discovery → Social → Relays**. Their row reads **Connected**.
+Members add `wss://<your hostname>` under **Settings → Social → Relays**. Their row reads **Connected**.
 
 Without Docker: binaries and checksums are on the [releases page](https://github.com/media-centaur/social-relay/releases); run `social-relay -config relay.toml` behind any proxy that forwards WebSocket upgrades. See [docs/operating.md](docs/operating.md) for systemd and nginx.
 

@@ -1,6 +1,6 @@
 # Operating a relay
 
-One friend group runs one relay. It is a single static binary, also shipped as a container image, configured by one TOML file that lists the members' public keys. Members paste the relay's address into Media Centaur under **Discovery → Social → Relays**.
+One friend group runs one relay. It is a single static binary, also shipped as a container image, configured by one TOML file that lists the members' public keys. Members paste the relay's address into Media Centaur under **Settings → Social → Relays**.
 
 The relay speaks plain HTTP and WebSocket. TLS is the job of a reverse proxy in front of it; the Compose setup below uses Caddy, which obtains certificates itself.
 
@@ -9,7 +9,7 @@ The relay speaks plain HTTP and WebSocket. TLS is the job of a reverse proxy in 
 - A machine reachable by every member, with a hostname pointing at it.
 - Ports 80 and 443 open to the internet, or an existing reverse proxy that forwards WebSocket upgrades.
 - Docker with Compose, or nothing beyond the binary.
-- Each member's npub. In Media Centaur it is under **Discovery → Social → Your identity**, with a **Copy** button.
+- Each member's npub. In Media Centaur it is under **Settings → Social → Your identity**, with a **Copy** button.
 
 ## Run with Docker Compose
 
@@ -30,7 +30,7 @@ The relay speaks plain HTTP and WebSocket. TLS is the job of a reverse proxy in 
 
    Expected: a JSON document with `"supported_nips":[1,11,42]` and the version.
 
-6. Tell members to add `wss://relay.example.com` under **Relays**. Their row reads **Connected** once the relay accepts their key.
+6. Tell members to add `wss://relay.example.com` under **Settings → Social → Relays**. Their row reads **Connected** once the relay accepts their key.
 
 The event database lives on the `relay-data` volume. The image runs as an unprivileged user (uid 65532); a fresh named volume is created writable for it. If you bind-mount a host directory instead, make it owned by that uid.
 
