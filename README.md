@@ -1,50 +1,58 @@
 # social-relay
 
-The private relay for [Media Centaur](https://github.com/media-centaur/media-centaur)'s Social feature. One friend group runs one instance. Only members can read or write, admins add members while it runs, and it stores only Media Centaur's recommendation events.
+Private Nostr relay for [Media Centaur](https://github.com/media-centaur/media-centaur)'s Social feature. One friend group, one instance. Only members read or write; admins add members at runtime; only kind 32160 is stored.
 
-Single static binary, also as a container image. Plain HTTP and WebSocket; TLS is your reverse proxy's job.
+One static binary or container image. TLS is the reverse proxy's job.
 
 ## Install
 
-Needs a hostname pointing at the machine, ports 80 and 443 open, and Docker with Compose.
+Needs a hostname pointing at the machine, ports 80 and 443, Docker with Compose.
 
-1. Copy [`deploy/`](deploy) somewhere: `compose.yml`, `Caddyfile`, `relay.toml`.
-2. `Caddyfile`: replace `relay.example.com` with your hostname.
-3. `relay.toml`: set `service_url = "wss://<your hostname>"` and put your npub under `admins`. It is under **Settings → Social → Your identity**.
+1. Copy [`deploy/`](deploy): `compose.yml`, `Caddyfile`, `relay.toml`.
+2. `Caddyfile`: set your hostname.
+3. `relay.toml`: set `service_url = "wss://<hostname>"` and your npub under `admins` (**Settings → Social → Your identity**).
 4. `docker compose up -d`
-5. Check: `curl -H 'Accept: application/nostr+json' https://<your hostname>` returns a JSON document.
+5. `curl -H 'Accept: application/nostr+json' https://<hostname>` returns JSON.
 
-Add members (below), then they add `wss://<your hostname>` under **Settings → Social → Relays**. Their row reads **Connected**.
+Members add `wss://<hostname>` under **Settings → Social → Relays**.
 
-Without Docker: binaries and checksums are on the [releases page](https://github.com/media-centaur/social-relay/releases); run `social-relay -config relay.toml` behind any proxy that forwards WebSocket upgrades. See [docs/operating.md](docs/operating.md) for systemd and nginx.
+Bare binary: [releases](https://github.com/media-centaur/social-relay/releases), `social-relay -config relay.toml`, any proxy that forwards WebSocket upgrades. systemd and nginx in [docs/operating.md](docs/operating.md).
 
 ## Configuration
 
-`relay.toml`, all keys required except `name`. Unknown keys are errors.
+`relay.toml`. All keys required except `name`; unknown keys are errors.
 
 | Key | Meaning |
 |---|---|
-| `name` | Shown in the relay information document. |
+| `name` | Shown in the NIP-11 document. |
 | `listen` | Bind address. `0.0.0.0:2170` in the container, `127.0.0.1:2170` behind a local proxy. |
-| `database` | The event database, one file. |
-| `service_url` | The `ws://` or `wss://` address members type. Scheme, host and path must match exactly. |
-| `admins` | npubs that manage members and are members themselves. At least one. |
+| `database` | Event database, one file. |
+| `service_url` | The `wss://` address members type. Scheme, host and path must match. |
+| `admins` | npubs that manage members and are members. At least one. |
 
 ## Manage
 
+```sh
+export SOCIAL_RELAY_ADMIN_KEY=nsec1...   # Settings → Social → Secret key
+social-relay members -relay wss://<hostname> add <npub> [reason]
+social-relay members -relay wss://<hostname> remove <npub>
+social-relay members -relay wss://<hostname> list
+```
+
+Or `docker run --rm -e SOCIAL_RELAY_ADMIN_KEY ghcr.io/media-centaur/social-relay members ...`. Changes apply at once.
+
 | Task | How |
 |---|---|
-| Add or remove a member | `SOCIAL_RELAY_ADMIN_KEY=nsec1... social-relay members -relay wss://<host> add <npub> [reason]`, or `remove`, or `list`. Applies at once, no restart. The nsec is under **Settings → Social → Secret key**. |
-| See who is connecting | `docker compose logs relay`. Each authentication logs the npub and whether it is a member. |
+| Logs | `docker compose logs relay` |
 | Upgrade | `docker compose pull && docker compose up -d` |
-| Back up | Stop the relay, copy `events.db` off the `relay-data` volume, start it. Members republish their own recommendations to an empty relay, so the database is recoverable without one. |
+| Back up | Stop, copy `events.db` off the `relay-data` volume, start. Members republish their own events to an empty relay. |
 
-A member's row reading **Rejected** means `service_url` differs from what they typed. **Connected** with *restricted: this key is not a member* means no admin has added them yet. Full table in [docs/operating.md](docs/operating.md#troubleshooting).
+**Rejected** in the app: `service_url` differs from what they typed. **Connected** with *restricted*: not a member yet. More in [docs/operating.md](docs/operating.md#troubleshooting).
 
 ## Reference
 
-- [docs/protocol.md](docs/protocol.md): what the relay accepts and answers, checked against the app.
-- [docs/operating.md](docs/operating.md): bare binary, systemd, nginx, full troubleshooting.
+- [docs/protocol.md](docs/protocol.md): wire contract with the app.
+- [docs/operating.md](docs/operating.md): bare binary, systemd, nginx, troubleshooting.
 - [CLAUDE.md](CLAUDE.md): contributor guide. `scripts/check` is the gate.
 
-MIT licensed.
+MIT.
