@@ -21,7 +21,7 @@ A friend group runs one container with a list of member keys and gets a private 
 
 ## Status
 
-In progress. Steps 1 to 4 done 2026-09-02 and pushed to `github.com/media-centaur/social-relay`: module pinned, bbolt store, TOML config (`name`, `listen`, `database`, `service_url`, `members`), NIP-11 advertising 1/11/42, replace semantics, challenge on connect, membership gating of reads and writes, kind 32160 only, service URL check. Step 5 (container, compose, operating doc) is next.
+In progress. Steps 1 to 4 done 2026-09-02 and pushed to `github.com/media-centaur/social-relay`: module pinned, bbolt store, TOML config (`name`, `listen`, `database`, `service_url`, `members`), NIP-11 advertising 1/11/42, replace semantics, challenge on connect, membership gating of reads and writes, kind 32160 only, service URL check. Step 5 done 2026-09-02: scratch image (uid 65532, 4.5 MB, built and smoke-run locally), `deploy/` compose with Caddy, release workflow (binaries plus GHCR image on `v*` tags), `docs/operating.md`, README, auth logging. Step 6 (end to end against the dev app, `docs/protocol.md`) is next.
 
 Layout: `cmd/social-relay` (flag `-config`, graceful shutdown), `internal/relay` (`config.go`, `relay.go` wiring, `membership.go`, `kinds.go`), tests in `internal/relay/*_test.go` through `httptest.NewServer` and a raw WebSocket client (`client_test.go`) that answers AUTH and waits for its `OK` the way the app does.
 
@@ -63,7 +63,7 @@ From `../media-centaur-app/lib/media_centaur/nostr/connection.ex` and `docs/soci
 2. ~~Done 2026-09-02.~~ `members` in the config and NIP-42 gating via `OnRequest` and `OnEvent` (khatru's hooks are single functions, not slices; `RequestAuth(ctx)` from `OnConnect`; `GetAuthed(ctx)` reads the socket's authenticated key). Tests through a real client on loopback: unauthenticated `REQ` gets `CLOSED` with `auth-required:`; a non-member authenticates then gets `CLOSED` / `OK false` with `restricted:`; a member round-trips an event; a second event with the same author and `d` replaces the first and a `REQ` returns only the newer one; `EOSE` follows stored matches.
 3. ~~Done 2026-09-02.~~ Kind restriction. Kind 1 rejected with `blocked:`; kind 32160 accepted. `acceptedKinds` in `kinds.go` is the single config point.
 4. ~~Done 2026-09-02.~~ Service URL check (`service_url`, required, ws or wss). khatru sets `Relay.ServiceURL` and compares through `nip42.ValidateAuthEvent`, which lowercases both sides, strips one trailing slash, and requires equal scheme, host and path. Setting `ServiceURL` also restricts the WebSocket and NIP-11 handlers to that path. Make it the config key `service_url`; test trailing slash, case, and `ws://` vs `wss://` (must differ).
-5. Container image (scratch, non-root, config and database on a volume), a compose example with a reverse proxy, `docs/operating.md`.
+5. ~~Done 2026-09-02.~~ Container image (scratch, non-root; config bind-mounted read-only at `/etc/social-relay/relay.toml`, database on the `/data` volume), `deploy/` compose example with Caddy, `docs/operating.md`, `scripts/build-release`, `.github/workflows/release.yml`.
 6. End to end against the dev app on `:2160`, then write `docs/protocol.md` and cross-check it against `docs/social.md` line by line.
 7. Tag a release (set `Info.Version` from build info; it reads `n/a` today); wiki page *Hosting a private relay* in `../media-centaur.wiki`.
 

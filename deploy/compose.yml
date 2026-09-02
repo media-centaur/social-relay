@@ -1,0 +1,25 @@
+# Relay plus Caddy as the TLS-terminating reverse proxy. Copy this directory,
+# edit relay.toml and Caddyfile, then `docker compose up -d`.
+services:
+  relay:
+    image: ghcr.io/media-centaur/social-relay:latest
+    restart: unless-stopped
+    volumes:
+      - ./relay.toml:/etc/social-relay/relay.toml:ro
+      - relay-data:/data
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  relay-data:
+  caddy-data:
+  caddy-config:

@@ -1,3 +1,4 @@
 /social-relay
 /relay.toml
 *.db
+/dist

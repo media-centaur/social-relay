@@ -1,0 +1,5 @@
+# Replace with the hostname that points at this machine. Caddy obtains and
+# renews the certificate itself.
+relay.example.com {
+	reverse_proxy relay:2170
+}

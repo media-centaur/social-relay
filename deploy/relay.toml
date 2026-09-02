@@ -1,0 +1,15 @@
+name = "Our friend group"
+
+# Inside the container: bind every interface so Caddy can reach it.
+listen = "0.0.0.0:2170"
+
+# On the relay-data volume.
+database = "/data/events.db"
+
+# The address members paste into Media Centaur. Must match the Caddyfile host.
+service_url = "wss://relay.example.com"
+
+# Members' npubs, from Discovery → Social → Your identity in Media Centaur.
+members = [
+  "npub1placeholder0000000000000000000000000000000000000000000000000",
+]

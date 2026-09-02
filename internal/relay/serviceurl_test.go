@@ -15,7 +15,7 @@ import (
 // actually listening on loopback, the way it sits behind an operator's reverse proxy.
 func startRelayAt(t *testing.T, serviceURL string, member nostr.PubKey) string {
 	t.Helper()
-	r, err := relay.New(relay.Config{
+	r, err := relay.New(testVersion, relay.Config{
 		Name:       "test relay",
 		Database:   filepath.Join(t.TempDir(), "events.db"),
 		Members:    []nostr.PubKey{member},

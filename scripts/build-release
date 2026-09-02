@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Build static release binaries into dist/ with checksums.
+# Usage: scripts/build-release <version>
+set -euo pipefail
+cd "$(dirname "$0")/.."
+version="${1:?usage: scripts/build-release <version>}"
+rm -rf dist && mkdir dist
+for target in linux/amd64 linux/arm64; do
+  GOOS="${target%/*}" GOARCH="${target#*/}" CGO_ENABLED=0 \
+    go build -trimpath -ldflags="-s -w -X main.version=${version}" \
+    -o "dist/social-relay_${target%/*}_${target#*/}" ./cmd/social-relay
+done
+(cd dist && sha256sum -- * > SHA256SUMS)
+ls -l dist

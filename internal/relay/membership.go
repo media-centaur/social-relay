@@ -2,9 +2,11 @@ package relay
 
 import (
 	"context"
+	"log"
 
 	"fiatjaf.com/nostr"
 	"fiatjaf.com/nostr/khatru"
+	"fiatjaf.com/nostr/nip19"
 )
 
 // Rejection reasons. These strings are part of the client contract in docs/protocol.md;
@@ -60,4 +62,16 @@ func (m membership) onEvent(ctx context.Context, event nostr.Event) (reject bool
 		return true, reasonAuthorNotMember
 	}
 	return false, ""
+}
+
+// logAuth records every successful AUTH so an operator can see who is knocking.
+// khatru accepts any well-formed AUTH; membership is decided on REQ and EVENT.
+func (m membership) logAuth(logger *log.Logger) func(context.Context, nostr.PubKey) {
+	return func(_ context.Context, pk nostr.PubKey) {
+		status := "member"
+		if !m.contains(pk) {
+			status = "not a member"
+		}
+		logger.Printf("authenticated %s (%s)", nip19.EncodeNpub(pk), status)
+	}
 }

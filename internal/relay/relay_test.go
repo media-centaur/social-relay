@@ -14,12 +14,15 @@ import (
 	"github.com/media-centaur/social-relay/internal/relay"
 )
 
-const kindRecommendation = nostr.Kind(32160)
+const (
+	kindRecommendation = nostr.Kind(32160)
+	testVersion        = "v0.0.0-test"
+)
 
 // startRelay runs an in-process relay on a loopback port and returns its ws:// URL.
 func startRelay(t *testing.T, members ...nostr.PubKey) string {
 	t.Helper()
-	r, err := relay.New(relay.Config{
+	r, err := relay.New(testVersion, relay.Config{
 		Name:     "test relay",
 		Database: filepath.Join(t.TempDir(), "events.db"),
 		Members:  members,
@@ -94,6 +97,9 @@ func TestRelayInformationDocumentNamesRelayAndSupportedNIPs(t *testing.T) {
 	got := fmt.Sprint(info.SupportedNIPs)
 	if got != "[1 11 42]" {
 		t.Errorf("supported_nips = %s, want [1 11 42]", got)
+	}
+	if info.Version != testVersion {
+		t.Errorf("version = %q, want %q", info.Version, testVersion)
 	}
 }
 

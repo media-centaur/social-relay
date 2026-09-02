@@ -1,0 +1,9 @@
+.git
+.github
+dist
+*.db
+relay.toml
+deploy
+docs
+campaigns
+decisions

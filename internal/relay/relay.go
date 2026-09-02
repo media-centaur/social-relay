@@ -24,7 +24,8 @@ type Relay struct {
 }
 
 // New opens the event store at cfg.Database and wires it into a khatru relay.
-func New(cfg Config) (*Relay, error) {
+// version is advertised in the NIP-11 document.
+func New(version string, cfg Config) (*Relay, error) {
 	store := &boltdb.BoltBackend{Path: cfg.Database}
 	if err := store.Init(); err != nil {
 		return nil, fmt.Errorf("open event store %s: %w", cfg.Database, err)
@@ -35,6 +36,7 @@ func New(cfg Config) (*Relay, error) {
 	rl.ServiceURL = cfg.ServiceURL
 	rl.Info.Name = cfg.Name
 	rl.Info.Software = "https://github.com/media-centaur/social-relay"
+	rl.Info.Version = version
 	rl.Info.SupportedNIPs = []any{1, 11, 42}
 
 	// Wired by hand rather than through UseEventstore: setting DeleteEvent or Count
@@ -54,6 +56,7 @@ func New(cfg Config) (*Relay, error) {
 	rl.OnConnect = members.challenge
 	rl.OnRequest = members.onRequest
 	rl.OnEvent = policies.SeqEvent(members.onEvent, onlyAcceptedKinds)
+	rl.OnAuth = members.logAuth(rl.Log)
 
 	return &Relay{khatru: rl, store: store}, nil
 }
