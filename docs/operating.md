@@ -123,7 +123,7 @@ social-relay members -relay wss://relay.example.com remove npub1... "left the gr
 social-relay members -relay wss://relay.example.com list
 ```
 
-With the container: `docker compose exec -e SOCIAL_RELAY_ADMIN_KEY relay /social-relay members -relay wss://relay.example.com ...`, with the variable set in the calling shell.
+Without a local binary, the image runs the same subcommand from any machine: `docker run --rm -e SOCIAL_RELAY_ADMIN_KEY ghcr.io/media-centaur/social-relay members -relay wss://relay.example.com ...`, with the variable set in the calling shell.
 
 Changes apply at once. A newly allowed member whose Media Centaur is already connected starts reading on its next request; nobody reconnects. A removed member's open connection stops receiving events immediately and their next request is refused. Their earlier recommendations stay in the database until they are replaced; nobody can delete them.
 

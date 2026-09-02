@@ -4,6 +4,4 @@ One markdown per multi-session initiative, removed when complete. Same conventio
 
 ## Active
 
-* [`dynamic-membership.md`](dynamic-membership.md) — **shipped as v0.2.0**, pending release verification.
-
-`private-relay-v1` shipped as v0.1.0 on 2026-09-02; its decisions live in `decisions/`, its contract in `docs/protocol.md`, and its history in `git log`.
+None. `private-relay-v1` (v0.1.0) and `dynamic-membership` (v0.2.0) shipped 2026-09-02; their decisions live in `decisions/`, the contract in `docs/protocol.md`, and the history in `git log`.

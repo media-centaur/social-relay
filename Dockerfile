@@ -14,4 +14,7 @@ COPY --from=build --chown=65532:65532 /data /data
 USER 65532:65532
 VOLUME /data
 EXPOSE 2170
-ENTRYPOINT ["/social-relay", "-config", "/etc/social-relay/relay.toml"]
+# Default arguments run the relay; `docker run <image> members ...` replaces them
+# with the management subcommand.
+ENTRYPOINT ["/social-relay"]
+CMD ["-config", "/etc/social-relay/relay.toml"]
