@@ -1,5 +1,5 @@
-// Package relay assembles the khatru relay for a friend group: bbolt storage and the
-// NIP-11 document in this layer; membership and kind rules land on top of it.
+// Package relay assembles the khatru relay for a friend group: bbolt storage, the
+// NIP-11 document, and the membership rules that gate every read and write.
 package relay
 
 import (
@@ -46,6 +46,11 @@ func New(cfg Config) (*Relay, error) {
 		_, err := store.ReplaceEvent(event)
 		return err
 	}
+
+	members := newMembership(cfg.Members)
+	rl.OnConnect = members.challenge
+	rl.OnRequest = members.onRequest
+	rl.OnEvent = members.onEvent
 
 	return &Relay{khatru: rl, store: store}, nil
 }

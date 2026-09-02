@@ -8,3 +8,9 @@ listen = "127.0.0.1:2170"
 
 # bbolt file holding every stored event. Created on first start.
 database = "/var/lib/social-relay/events.db"
+
+# Public keys allowed to read and write, as npub strings. Everyone else is refused.
+# At least one is required. Restart the relay after editing.
+members = [
+  "npub1placeholder0000000000000000000000000000000000000000000000000",
+]
