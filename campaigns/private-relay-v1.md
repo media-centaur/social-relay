@@ -21,7 +21,7 @@ A friend group runs one container with a list of member keys and gets a private 
 
 ## Status
 
-In progress. Steps 1 to 4 done 2026-09-02 and pushed to `github.com/media-centaur/social-relay`: module pinned, bbolt store, TOML config (`name`, `listen`, `database`, `service_url`, `members`), NIP-11 advertising 1/11/42, replace semantics, challenge on connect, membership gating of reads and writes, kind 32160 only, service URL check. Step 5 done 2026-09-02: scratch image (uid 65532, 4.5 MB, built and smoke-run locally), `deploy/` compose with Caddy, release workflow (binaries plus GHCR image on `v*` tags), `docs/operating.md`, README, auth logging. Step 6 (end to end against the dev app, `docs/protocol.md`) is next.
+In progress. Steps 1 to 4 done 2026-09-02 and pushed to `github.com/media-centaur/social-relay`: module pinned, bbolt store, TOML config (`name`, `listen`, `database`, `service_url`, `members`), NIP-11 advertising 1/11/42, replace semantics, challenge on connect, membership gating of reads and writes, kind 32160 only, service URL check. Step 5 done 2026-09-02: scratch image (uid 65532, 4.5 MB, built and smoke-run locally), `deploy/` compose with Caddy, release workflow (binaries plus GHCR image on `v*` tags), `docs/operating.md`, README, auth logging. Step 6 done 2026-09-02: dev app on `:2160` added `ws://127.0.0.1:2173`, relay log showed its npub authenticating as a member, the Social row read **Connected**, the Status drill-in read *Connected to 1 of 1 relays · 1 sent*, a recommendation sent from a library title reached a scripted second member through the relay (kind 32160, `d` = `tmdb:movie:…`). No app-side change. `docs/protocol.md` written and cross-checked against `docs/social.md`. The test relay was removed from the dev app afterwards; the recommendation it created remains in the dev database. Step 7 (release, wiki) is next.
 
 Layout: `cmd/social-relay` (flag `-config`, graceful shutdown), `internal/relay` (`config.go`, `relay.go` wiring, `membership.go`, `kinds.go`), tests in `internal/relay/*_test.go` through `httptest.NewServer` and a raw WebSocket client (`client_test.go`) that answers AUTH and waits for its `OK` the way the app does.
 
@@ -64,7 +64,7 @@ From `../media-centaur-app/lib/media_centaur/nostr/connection.ex` and `docs/soci
 3. ~~Done 2026-09-02.~~ Kind restriction. Kind 1 rejected with `blocked:`; kind 32160 accepted. `acceptedKinds` in `kinds.go` is the single config point.
 4. ~~Done 2026-09-02.~~ Service URL check (`service_url`, required, ws or wss). khatru sets `Relay.ServiceURL` and compares through `nip42.ValidateAuthEvent`, which lowercases both sides, strips one trailing slash, and requires equal scheme, host and path. Setting `ServiceURL` also restricts the WebSocket and NIP-11 handlers to that path. Make it the config key `service_url`; test trailing slash, case, and `ws://` vs `wss://` (must differ).
 5. ~~Done 2026-09-02.~~ Container image (scratch, non-root; config bind-mounted read-only at `/etc/social-relay/relay.toml`, database on the `/data` volume), `deploy/` compose example with Caddy, `docs/operating.md`, `scripts/build-release`, `.github/workflows/release.yml`.
-6. End to end against the dev app on `:2160`, then write `docs/protocol.md` and cross-check it against `docs/social.md` line by line.
+6. ~~Done 2026-09-02.~~ End to end against the dev app on `:2160`, then write `docs/protocol.md` and cross-check it against `docs/social.md` line by line. Observed: the app stores a URL typed without a trailing slash with one (`ws://127.0.0.1:2173/`) and authenticates twice on connect; both accepted.
 7. Tag a release (set `Info.Version` from build info; it reads `n/a` today); wiki page *Hosting a private relay* in `../media-centaur.wiki`.
 
 ## Open questions
@@ -78,7 +78,7 @@ From `../media-centaur-app/lib/media_centaur/nostr/connection.ex` and `docs/soci
 
 Items that need an app-side change. Move each to the app campaign `../media-centaur-app/campaigns/friends-recommendations.md` when it becomes concrete.
 
-* **Non-member rejection surfaces as `last_error`, not as *Relay rejected this identity*.** The relay cannot refuse `AUTH` (open question 1). The app should treat `CLOSED restricted:` on the `feed` subscription from a relay that has accepted its `AUTH` as an authentication failure and raise the incident. Concrete once step 2 lands and the exact `CLOSED` reason string is fixed in `docs/protocol.md`.
+* **Non-member rejection surfaces as `last_error`, not as *Relay rejected this identity*.** The relay cannot refuse `AUTH` (open question 1). Exact wire behaviour, fixed in `docs/protocol.md`: `AUTH` → `OK true`; then `["CLOSED", "feed", "restricted: this key is not a member of this relay"]` and the same on `own:<url>`; every `EVENT` → `OK false` with the same reason. Proposed app change: treat `CLOSED restricted:` on `feed` from a relay that accepted the `AUTH` as `auth_failed`. Ready to move to `../media-centaur-app/campaigns/friends-recommendations.md`.
 
 ## Completion criteria
 
