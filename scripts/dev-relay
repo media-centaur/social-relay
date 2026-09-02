@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# Run this relay in Docker for local development, on loopback port 2173.
+#
+#   scripts/dev-relay up <npub>...   build the image, write dev/relay.toml with
+#                                    these members, (re)start the container
+#   scripts/dev-relay up             restart with the existing dev/relay.toml
+#   scripts/dev-relay down           stop and remove the container
+#   scripts/dev-relay reset          down, then drop the data volume and dev/
+#   scripts/dev-relay status         container state and the NIP-11 document
+#
+# SOCIAL_RELAY_IMAGE=ghcr.io/media-centaur/social-relay:latest skips the build
+# and runs that image instead.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+container=social-relay-dev
+volume=social-relay-dev-data
+image="${SOCIAL_RELAY_IMAGE:-social-relay:dev}"
+port=2173
+url="ws://127.0.0.1:${port}"
+config="$PWD/dev/relay.toml"
+
+usage() {
+  sed -n '2,/^set -euo/{ /^set -euo/d; s/^# \{0,1\}//p }' "$0"
+}
+
+write_config() {
+  mkdir -p dev
+  {
+    echo 'name = "Dev relay"'
+    echo 'listen = "0.0.0.0:2170"'
+    echo 'database = "/data/events.db"'
+    echo "service_url = \"${url}\""
+    echo 'members = ['
+    for npub in "$@"; do echo "  \"${npub}\","; done
+    echo ']'
+  } > "$config"
+}
+
+build() {
+  if [ -z "${SOCIAL_RELAY_IMAGE:-}" ]; then
+    docker build -q -t "$image" . >/dev/null
+  fi
+}
+
+wait_ready() {
+  for _ in $(seq 1 50); do
+    if curl -fsS -H 'Accept: application/nostr+json' "http://127.0.0.1:${port}" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 0.1
+  done
+  echo "relay did not answer on ${url} within 5s; see: docker logs ${container}" >&2
+  return 1
+}
+
+up() {
+  if [ "$#" -gt 0 ]; then
+    for npub in "$@"; do
+      case "$npub" in
+        npub1*) ;;
+        *) echo "not an npub: ${npub}" >&2; exit 2 ;;
+      esac
+    done
+    write_config "$@"
+  elif [ ! -f "$config" ]; then
+    echo "no dev/relay.toml yet; pass the members' npubs:" >&2
+    echo "  scripts/dev-relay up npub1... npub1..." >&2
+    exit 2
+  fi
+  build
+  docker rm -f "$container" >/dev/null 2>&1 || true
+  docker run -d --name "$container" \
+    -p "127.0.0.1:${port}:2170" \
+    -v "${config}:/etc/social-relay/relay.toml:ro" \
+    -v "${volume}:/data" \
+    "$image" >/dev/null
+  wait_ready
+  echo "relay up at ${url}"
+  echo "members:"
+  grep '^  "npub' "$config" | tr -d ' ",'
+}
+
+down() {
+  docker rm -f "$container" >/dev/null 2>&1 && echo "relay stopped" || echo "relay was not running"
+}
+
+reset() {
+  down
+  docker volume rm "$volume" >/dev/null 2>&1 || true
+  rm -rf dev
+  echo "relay data and dev/relay.toml removed"
+}
+
+status() {
+  if docker ps --filter "name=^${container}$" --format '{{.Status}}' | grep -q .; then
+    echo "container: $(docker ps --filter "name=^${container}$" --format '{{.Status}}')"
+  else
+    echo "container: not running (scripts/dev-relay up)"
+    exit 1
+  fi
+  echo "url: ${url}"
+  echo "members:"
+  grep '^  "npub' "$config" | tr -d ' ",'
+  echo "nip-11:"
+  curl -fsS -H 'Accept: application/nostr+json' "http://127.0.0.1:${port}"
+  echo
+}
+
+case "${1:-}" in
+  up) shift; up "$@" ;;
+  down) down ;;
+  reset) reset ;;
+  status) status ;;
+  *) usage; exit 2 ;;
+esac

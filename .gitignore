@@ -2,3 +2,4 @@
 /relay.toml
 *.db
 /dist
+/dev

@@ -24,7 +24,7 @@ The client is `MediaCentaur.Nostr` and `MediaCentaur.Social` in the sibling repo
 
 ## Cross-repo verification
 
-The app's dev server runs at `http://localhost:2160` (systemd user unit `media-centaur-dev`, real database). End-to-end check for any change that touches authentication or acceptance: run the relay locally, add `ws://127.0.0.1:<port>` on the app's Social tab, and confirm the relay log shows the app's public key authenticating and the app's Status page Social tile reads connected.
+The app's dev server runs at `http://localhost:2160` (systemd user unit `media-centaur-dev`, real database). `scripts/dev-relay up <npub>...` builds this working tree into `social-relay:dev` and runs it in Docker on `ws://127.0.0.1:2173` with those members (`down`, `reset`, `status`; no arguments prints usage). The app drives it through `just social-*` recipes, which also supply a scripted second member (`mix social.dev` there). End-to-end check for any change that touches authentication or acceptance: `scripts/dev-relay up` with the app's npub, confirm the relay log shows the app's public key authenticating and the app's Status page Social tile reads connected, then `just social-recommend …` from the app repo and check the app's Feed.
 
 A change that alters what the relay accepts, how it authenticates, or what it answers on rejection is a cross-repo change. Record it in the campaign under **Cross-repo** so the app-side work is not lost.
 
