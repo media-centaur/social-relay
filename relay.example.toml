@@ -1,0 +1,10 @@
+# Copy to relay.toml and edit. Every key shown is required unless noted.
+
+# Shown to clients in the relay information document (NIP-11). Optional.
+name = "Our friend group"
+
+# Plain-HTTP listen address. Put a TLS-terminating reverse proxy in front.
+listen = "127.0.0.1:2170"
+
+# bbolt file holding every stored event. Created on first start.
+database = "/var/lib/social-relay/events.db"

@@ -4,4 +4,4 @@ One markdown per multi-session initiative, removed when complete. Same conventio
 
 ## Active
 
-* [`private-relay-v1.md`](private-relay-v1.md) — **planning.** The first shippable relay: one container, a config file of member keys, NIP-42 gating of reads and writes, kind 32160 only, verified end to end against the dev app.
+* [`private-relay-v1.md`](private-relay-v1.md) — **in progress.** The first shippable relay: one container, a config file of member keys, NIP-42 gating of reads and writes, kind 32160 only, verified end to end against the dev app.

@@ -8,8 +8,8 @@ The client is `MediaCentaur.Nostr` and `MediaCentaur.Friends` in the sibling rep
 
 ## Stack
 
-- Go, one static binary, built on **khatru**. Module path `fiatjaf.com/nostr/khatru`. The GitHub repository `github.com/fiatjaf/khatru` was archived in January 2026; the live module is published as Go pseudo-versions from the author's own git host, so **pin an exact pseudo-version** and treat every upgrade as a potential API break.
-- Event storage: the SQLite backend from the same eventstore family.
+- Go, one static binary, built on **khatru**, the package `fiatjaf.com/nostr/khatru` inside the single module `fiatjaf.com/nostr` (which also provides the client, `nip11`, `nip42` and `eventstore`). The GitHub repository `github.com/fiatjaf/khatru` was archived in January 2026; the live module is published as Go pseudo-versions from the author's own git host, so **pin an exact pseudo-version** and treat every upgrade as a potential API break.
+- Event storage: the bbolt backend `fiatjaf.com/nostr/eventstore/boltdb` (ADR-001). One file, pure Go.
 - Distribution: a container image on GHCR plus the bare binary attached to a GitHub release. TLS is the operator's reverse proxy, not the relay.
 
 ## Working in this repo
