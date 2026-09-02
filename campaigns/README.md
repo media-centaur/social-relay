@@ -4,4 +4,6 @@ One markdown per multi-session initiative, removed when complete. Same conventio
 
 ## Active
 
-None. `private-relay-v1` (v0.1.0) and `dynamic-membership` (v0.2.0) shipped 2026-09-02; their decisions live in `decisions/`, the contract in `docs/protocol.md`, and the history in `git log`.
+- [deletion-and-sync-v1](deletion-and-sync-v1.md) — kind 5 deletion with one-record-per-address tombstones, `limit` cap, protocol doc defers to the app's contract page. Ready to start.
+
+Previously: `private-relay-v1` (v0.1.0) and `dynamic-membership` (v0.2.0) shipped 2026-09-02; their decisions live in `decisions/`, the contract in `docs/protocol.md`, and the history in `git log`.
