@@ -15,8 +15,9 @@ database = "/var/lib/social-relay/events.db"
 # do not. With a path, the relay answers only on that path.
 service_url = "wss://relay.example.com"
 
-# Public keys allowed to read and write, as npub strings. Everyone else is refused.
-# At least one is required. Restart the relay after editing.
-members = [
+# Admins: npubs that may add and remove members while the relay runs
+# (`social-relay members add ...`) and are members themselves. At least one.
+# A group that never changes can list everyone here.
+admins = [
   "npub1placeholder0000000000000000000000000000000000000000000000000",
 ]

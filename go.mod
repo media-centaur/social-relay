@@ -6,6 +6,7 @@ require (
 	fiatjaf.com/nostr v0.0.0-20260902034142-316ef6591fa2
 	github.com/BurntSushi/toml v1.6.0
 	github.com/coder/websocket v1.8.13
+	go.etcd.io/bbolt v1.4.2
 )
 
 require (
@@ -43,7 +44,6 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.59.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	go.etcd.io/bbolt v1.4.2 // indirect
 	golang.org/x/crypto v0.50.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20231108232855-2478ac86f678 // indirect

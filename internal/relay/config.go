@@ -21,8 +21,9 @@ type Config struct {
 	// ServiceURL is the public ws:// or wss:// address members paste into the app. NIP-42
 	// AUTH answers must name it in their relay tag, and the relay serves only its path.
 	ServiceURL string
-	// Members are the public keys allowed to read and write. Nobody else gets either.
-	Members []nostr.PubKey
+	// Admins may manage membership through the NIP-86 API and are members themselves.
+	// Every other member is added at runtime and stored in the database.
+	Admins []nostr.PubKey
 }
 
 // fileConfig mirrors the TOML file before validation. Members are npub strings there.
@@ -31,7 +32,7 @@ type fileConfig struct {
 	Listen     string   `toml:"listen"`
 	Database   string   `toml:"database"`
 	ServiceURL string   `toml:"service_url"`
-	Members    []string `toml:"members"`
+	Admins     []string `toml:"admins"`
 }
 
 // LoadConfig reads and validates the TOML file at path. Unknown keys are errors.
@@ -61,8 +62,8 @@ func LoadConfig(path string) (Config, error) {
 	if raw.ServiceURL == "" {
 		missing = append(missing, "service_url")
 	}
-	if len(raw.Members) == 0 {
-		missing = append(missing, "members (at least one npub)")
+	if len(raw.Admins) == 0 {
+		missing = append(missing, "admins (at least one npub)")
 	}
 	if len(missing) > 0 {
 		return Config{}, fmt.Errorf("%s: missing required %v", path, missing)
@@ -72,13 +73,13 @@ func LoadConfig(path string) (Config, error) {
 		return Config{}, fmt.Errorf("%s: service_url: %w", path, err)
 	}
 
-	members := make([]nostr.PubKey, 0, len(raw.Members))
-	for _, entry := range raw.Members {
+	admins := make([]nostr.PubKey, 0, len(raw.Admins))
+	for _, entry := range raw.Admins {
 		pk, err := decodeNpub(entry)
 		if err != nil {
-			return Config{}, fmt.Errorf("%s: members: %w", path, err)
+			return Config{}, fmt.Errorf("%s: admins: %w", path, err)
 		}
-		members = append(members, pk)
+		admins = append(admins, pk)
 	}
 
 	return Config{
@@ -86,7 +87,7 @@ func LoadConfig(path string) (Config, error) {
 		Listen:     raw.Listen,
 		Database:   raw.Database,
 		ServiceURL: raw.ServiceURL,
-		Members:    members,
+		Admins:     admins,
 	}, nil
 }
 

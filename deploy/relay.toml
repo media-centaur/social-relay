@@ -9,7 +9,9 @@ database = "/data/events.db"
 # The address members paste into Media Centaur. Must match the Caddyfile host.
 service_url = "wss://relay.example.com"
 
-# Members' npubs, from Discovery → Social → Your identity in Media Centaur.
-members = [
+# Admins: npubs that may add and remove members while the relay runs
+# (`social-relay members add ...`) and are members themselves. At least one.
+# Npubs come from Settings → Social → Your identity in Media Centaur.
+admins = [
   "npub1placeholder0000000000000000000000000000000000000000000000000",
 ]

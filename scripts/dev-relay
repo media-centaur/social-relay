@@ -2,7 +2,7 @@
 # Run this relay in Docker for local development, on loopback port 2173.
 #
 #   scripts/dev-relay up <npub>...   build the image, write dev/relay.toml with
-#                                    these members, (re)start the container
+#                                    these admins, (re)start the container
 #   scripts/dev-relay up             restart with the existing dev/relay.toml
 #   scripts/dev-relay down           stop and remove the container
 #   scripts/dev-relay reset          down, then drop the data volume and dev/
@@ -31,7 +31,7 @@ write_config() {
     echo 'listen = "0.0.0.0:2170"'
     echo 'database = "/data/events.db"'
     echo "service_url = \"${url}\""
-    echo 'members = ['
+    echo 'admins = ['
     for npub in "$@"; do echo "  \"${npub}\","; done
     echo ']'
   } > "$config"
@@ -64,7 +64,7 @@ up() {
     done
     write_config "$@"
   elif [ ! -f "$config" ]; then
-    echo "no dev/relay.toml yet; pass the members' npubs:" >&2
+    echo "no dev/relay.toml yet; pass the admins' npubs:" >&2
     echo "  scripts/dev-relay up npub1... npub1..." >&2
     exit 2
   fi
@@ -77,7 +77,7 @@ up() {
     "$image" >/dev/null
   wait_ready
   echo "relay up at ${url}"
-  echo "members:"
+  echo "admins:"
   grep '^  "npub' "$config" | tr -d ' ",'
 }
 
@@ -100,7 +100,7 @@ status() {
     exit 1
   fi
   echo "url: ${url}"
-  echo "members:"
+  echo "admins:"
   grep '^  "npub' "$config" | tr -d ' ",'
   echo "nip-11:"
   curl -fsS -H 'Accept: application/nostr+json' "http://127.0.0.1:${port}"

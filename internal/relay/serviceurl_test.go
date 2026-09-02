@@ -18,7 +18,7 @@ func startRelayAt(t *testing.T, serviceURL string, member nostr.PubKey) string {
 	r, err := relay.New(testVersion, relay.Config{
 		Name:       "test relay",
 		Database:   filepath.Join(t.TempDir(), "events.db"),
-		Members:    []nostr.PubKey{member},
+		Admins:     []nostr.PubKey{member},
 		ServiceURL: serviceURL,
 	})
 	if err != nil {

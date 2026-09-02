@@ -156,3 +156,4 @@ func (c *client) readEvent(id string) nostr.Event {
 	}
 	return evt.Event
 }
+

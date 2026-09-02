@@ -1,5 +1,6 @@
 // Package relay assembles the khatru relay for a friend group: bbolt storage, the
-// NIP-11 document, and the membership rules that gate every read and write.
+// NIP-11 document, the membership rules that gate every read and write, and the
+// NIP-86 management API through which admins change membership at runtime.
 package relay
 
 import (
@@ -37,7 +38,7 @@ func New(version string, cfg Config) (*Relay, error) {
 	rl.Info.Name = cfg.Name
 	rl.Info.Software = "https://github.com/media-centaur/social-relay"
 	rl.Info.Version = version
-	rl.Info.SupportedNIPs = []any{1, 11, 42}
+	rl.Info.SupportedNIPs = []any{1, 11, 42, 86}
 
 	// Wired by hand rather than through UseEventstore: setting DeleteEvent or Count
 	// makes khatru advertise NIP-9 and NIP-45, neither of which this relay offers.
@@ -52,11 +53,17 @@ func New(version string, cfg Config) (*Relay, error) {
 		return err
 	}
 
-	members := newMembership(cfg.Members)
+	members, err := newMembership(cfg.Admins, store.DB)
+	if err != nil {
+		store.Close()
+		return nil, err
+	}
 	rl.OnConnect = members.challenge
 	rl.OnRequest = members.onRequest
 	rl.OnEvent = policies.SeqEvent(members.onEvent, onlyAcceptedKinds)
+	rl.PreventBroadcast = members.preventBroadcast
 	rl.OnAuth = members.logAuth(rl.Log)
+	rl.ManagementAPI = managementAPI(members, rl.Log)
 
 	return &Relay{khatru: rl, store: store}, nil
 }

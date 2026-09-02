@@ -20,12 +20,12 @@ const (
 )
 
 // startRelay runs an in-process relay on a loopback port and returns its ws:// URL.
-func startRelay(t *testing.T, members ...nostr.PubKey) string {
+func startRelay(t *testing.T, admins ...nostr.PubKey) string {
 	t.Helper()
 	r, err := relay.New(testVersion, relay.Config{
 		Name:     "test relay",
 		Database: filepath.Join(t.TempDir(), "events.db"),
-		Members:  members,
+		Admins:   admins,
 	})
 	if err != nil {
 		t.Fatalf("relay.New: %v", err)
@@ -95,8 +95,8 @@ func TestRelayInformationDocumentNamesRelayAndSupportedNIPs(t *testing.T) {
 		t.Errorf("name = %q, want %q", info.Name, "test relay")
 	}
 	got := fmt.Sprint(info.SupportedNIPs)
-	if got != "[1 11 42]" {
-		t.Errorf("supported_nips = %s, want [1 11 42]", got)
+	if got != "[1 11 42 86]" {
+		t.Errorf("supported_nips = %s, want [1 11 42 86]", got)
 	}
 	if info.Version != testVersion {
 		t.Errorf("version = %q, want %q", info.Version, testVersion)

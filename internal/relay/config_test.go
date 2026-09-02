@@ -29,7 +29,7 @@ name = "our relay"
 listen = "127.0.0.1:2170"
 database = "/data/events.db"
 service_url = "wss://relay.example"
-members = ["`+nip19.EncodeNpub(alice)+`", "`+nip19.EncodeNpub(bob)+`"]
+admins = ["`+nip19.EncodeNpub(alice)+`", "`+nip19.EncodeNpub(bob)+`"]
 `)
 	cfg, err := relay.LoadConfig(path)
 	if err != nil {
@@ -40,31 +40,31 @@ members = ["`+nip19.EncodeNpub(alice)+`", "`+nip19.EncodeNpub(bob)+`"]
 		Listen:   "127.0.0.1:2170",
 		Database:   "/data/events.db",
 		ServiceURL: "wss://relay.example",
-		Members:    []nostr.PubKey{alice, bob},
+		Admins:     []nostr.PubKey{alice, bob},
 	}
 	if !reflect.DeepEqual(cfg, want) {
 		t.Errorf("got %+v, want %+v", cfg, want)
 	}
 }
 
-func TestLoadConfigRequiresAtLeastOneMember(t *testing.T) {
+func TestLoadConfigRequiresAtLeastOneAdmin(t *testing.T) {
 	path := writeConfig(t, `
 listen = "127.0.0.1:2170"
 database = "/data/events.db"
 service_url = "wss://relay.example"
-members = []
+admins = []
 `)
-	if _, err := relay.LoadConfig(path); err == nil || !strings.Contains(err.Error(), "members") {
-		t.Fatalf("err = %v, want an error naming members", err)
+	if _, err := relay.LoadConfig(path); err == nil || !strings.Contains(err.Error(), "admins") {
+		t.Fatalf("err = %v, want an error naming admins", err)
 	}
 }
 
-func TestLoadConfigRejectsMalformedMember(t *testing.T) {
+func TestLoadConfigRejectsMalformedAdmin(t *testing.T) {
 	path := writeConfig(t, `
 listen = "127.0.0.1:2170"
 database = "/data/events.db"
 service_url = "wss://relay.example"
-members = ["`+nostr.Generate().Public().Hex()+`"]
+admins = ["`+nostr.Generate().Public().Hex()+`"]
 `)
 	if _, err := relay.LoadConfig(path); err == nil || !strings.Contains(err.Error(), "npub") {
 		t.Fatalf("err = %v, want an error explaining npub is required", err)
@@ -77,7 +77,7 @@ name = "our relay"
 listen = "127.0.0.1:2170"
 database = "/data/events.db"
 service_url = "wss://relay.example"
-members = ["`+nip19.EncodeNpub(nostr.Generate().Public())+`"]
+admins = ["`+nip19.EncodeNpub(nostr.Generate().Public())+`"]
 member = ["npub1placeholder"]
 `)
 	if _, err := relay.LoadConfig(path); err == nil {
@@ -103,7 +103,7 @@ func TestLoadConfigRejectsServiceURLThatIsNotWebSocket(t *testing.T) {
 listen = "127.0.0.1:2170"
 database = "/data/events.db"
 service_url = "https://relay.example"
-members = ["`+nip19.EncodeNpub(nostr.Generate().Public())+`"]
+admins = ["`+nip19.EncodeNpub(nostr.Generate().Public())+`"]
 `)
 	if _, err := relay.LoadConfig(path); err == nil || !strings.Contains(err.Error(), "service_url") {
 		t.Fatalf("err = %v, want an error naming service_url", err)
