@@ -28,6 +28,7 @@ func TestLoadConfigReadsEveryKey(t *testing.T) {
 name = "our relay"
 listen = "127.0.0.1:2170"
 database = "/data/events.db"
+service_url = "wss://relay.example"
 members = ["`+nip19.EncodeNpub(alice)+`", "`+nip19.EncodeNpub(bob)+`"]
 `)
 	cfg, err := relay.LoadConfig(path)
@@ -37,8 +38,9 @@ members = ["`+nip19.EncodeNpub(alice)+`", "`+nip19.EncodeNpub(bob)+`"]
 	want := relay.Config{
 		Name:     "our relay",
 		Listen:   "127.0.0.1:2170",
-		Database: "/data/events.db",
-		Members:  []nostr.PubKey{alice, bob},
+		Database:   "/data/events.db",
+		ServiceURL: "wss://relay.example",
+		Members:    []nostr.PubKey{alice, bob},
 	}
 	if !reflect.DeepEqual(cfg, want) {
 		t.Errorf("got %+v, want %+v", cfg, want)
@@ -49,6 +51,7 @@ func TestLoadConfigRequiresAtLeastOneMember(t *testing.T) {
 	path := writeConfig(t, `
 listen = "127.0.0.1:2170"
 database = "/data/events.db"
+service_url = "wss://relay.example"
 members = []
 `)
 	if _, err := relay.LoadConfig(path); err == nil || !strings.Contains(err.Error(), "members") {
@@ -60,6 +63,7 @@ func TestLoadConfigRejectsMalformedMember(t *testing.T) {
 	path := writeConfig(t, `
 listen = "127.0.0.1:2170"
 database = "/data/events.db"
+service_url = "wss://relay.example"
 members = ["`+nostr.Generate().Public().Hex()+`"]
 `)
 	if _, err := relay.LoadConfig(path); err == nil || !strings.Contains(err.Error(), "npub") {
@@ -72,6 +76,7 @@ func TestLoadConfigRejectsUnknownKeys(t *testing.T) {
 name = "our relay"
 listen = "127.0.0.1:2170"
 database = "/data/events.db"
+service_url = "wss://relay.example"
 members = ["`+nip19.EncodeNpub(nostr.Generate().Public())+`"]
 member = ["npub1placeholder"]
 `)
@@ -80,9 +85,27 @@ member = ["npub1placeholder"]
 	}
 }
 
-func TestLoadConfigRequiresListenAndDatabase(t *testing.T) {
+func TestLoadConfigRequiresListenDatabaseAndServiceURL(t *testing.T) {
 	path := writeConfig(t, `name = "our relay"`)
-	if _, err := relay.LoadConfig(path); err == nil {
-		t.Fatal("expected an error for missing listen and database, got nil")
+	_, err := relay.LoadConfig(path)
+	if err == nil {
+		t.Fatal("expected an error for missing keys, got nil")
+	}
+	for _, key := range []string{"listen", "database", "service_url"} {
+		if !strings.Contains(err.Error(), key) {
+			t.Errorf("error %q does not name missing key %s", err, key)
+		}
+	}
+}
+
+func TestLoadConfigRejectsServiceURLThatIsNotWebSocket(t *testing.T) {
+	path := writeConfig(t, `
+listen = "127.0.0.1:2170"
+database = "/data/events.db"
+service_url = "https://relay.example"
+members = ["`+nip19.EncodeNpub(nostr.Generate().Public())+`"]
+`)
+	if _, err := relay.LoadConfig(path); err == nil || !strings.Contains(err.Error(), "service_url") {
+		t.Fatalf("err = %v, want an error naming service_url", err)
 	}
 }

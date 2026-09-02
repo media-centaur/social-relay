@@ -2,6 +2,7 @@ package relay
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 
 	"fiatjaf.com/nostr"
@@ -17,16 +18,20 @@ type Config struct {
 	Listen string
 	// Database is the path of the bbolt file holding every stored event.
 	Database string
+	// ServiceURL is the public ws:// or wss:// address members paste into the app. NIP-42
+	// AUTH answers must name it in their relay tag, and the relay serves only its path.
+	ServiceURL string
 	// Members are the public keys allowed to read and write. Nobody else gets either.
 	Members []nostr.PubKey
 }
 
 // fileConfig mirrors the TOML file before validation. Members are npub strings there.
 type fileConfig struct {
-	Name     string   `toml:"name"`
-	Listen   string   `toml:"listen"`
-	Database string   `toml:"database"`
-	Members  []string `toml:"members"`
+	Name       string   `toml:"name"`
+	Listen     string   `toml:"listen"`
+	Database   string   `toml:"database"`
+	ServiceURL string   `toml:"service_url"`
+	Members    []string `toml:"members"`
 }
 
 // LoadConfig reads and validates the TOML file at path. Unknown keys are errors.
@@ -53,11 +58,18 @@ func LoadConfig(path string) (Config, error) {
 	if raw.Database == "" {
 		missing = append(missing, "database")
 	}
+	if raw.ServiceURL == "" {
+		missing = append(missing, "service_url")
+	}
 	if len(raw.Members) == 0 {
 		missing = append(missing, "members (at least one npub)")
 	}
 	if len(missing) > 0 {
 		return Config{}, fmt.Errorf("%s: missing required %v", path, missing)
+	}
+
+	if err := checkServiceURL(raw.ServiceURL); err != nil {
+		return Config{}, fmt.Errorf("%s: service_url: %w", path, err)
 	}
 
 	members := make([]nostr.PubKey, 0, len(raw.Members))
@@ -69,7 +81,24 @@ func LoadConfig(path string) (Config, error) {
 		members = append(members, pk)
 	}
 
-	return Config{Name: raw.Name, Listen: raw.Listen, Database: raw.Database, Members: members}, nil
+	return Config{
+		Name:       raw.Name,
+		Listen:     raw.Listen,
+		Database:   raw.Database,
+		ServiceURL: raw.ServiceURL,
+		Members:    members,
+	}, nil
+}
+
+func checkServiceURL(s string) error {
+	u, err := url.Parse(s)
+	if err != nil {
+		return err
+	}
+	if (u.Scheme != "ws" && u.Scheme != "wss") || u.Host == "" {
+		return fmt.Errorf("%q must be a ws:// or wss:// URL with a host", s)
+	}
+	return nil
 }
 
 func decodeNpub(s string) (nostr.PubKey, error) {

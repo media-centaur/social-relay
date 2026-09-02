@@ -9,6 +9,12 @@ listen = "127.0.0.1:2170"
 # bbolt file holding every stored event. Created on first start.
 database = "/var/lib/social-relay/events.db"
 
+# The public address members paste into the app, exactly as they will type it.
+# Clients prove they are talking to this relay by naming it when they authenticate,
+# so ws:// versus wss:// and the path must match; letter case and a trailing slash
+# do not. With a path, the relay answers only on that path.
+service_url = "wss://relay.example.com"
+
 # Public keys allowed to read and write, as npub strings. Everyone else is refused.
 # At least one is required. Restart the relay after editing.
 members = [

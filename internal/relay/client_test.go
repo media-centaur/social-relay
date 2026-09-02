@@ -104,10 +104,16 @@ func (c *client) readOK(id nostr.ID) (bool, string) {
 	return ok.OK, ok.Reason
 }
 
-// auth answers the challenge as sk and returns the relay's verdict.
+// auth answers the challenge as sk, naming the dialled URL in the relay tag.
 func (c *client) auth(sk nostr.SecretKey) (bool, string) {
 	c.t.Helper()
-	evt := nip42.CreateUnsignedAuthEvent(c.readChallenge(), sk.Public(), c.url)
+	return c.authAs(sk, c.url)
+}
+
+// authAs answers the challenge as sk with an explicit relay tag and returns the verdict.
+func (c *client) authAs(sk nostr.SecretKey, relayURL string) (bool, string) {
+	c.t.Helper()
+	evt := nip42.CreateUnsignedAuthEvent(c.readChallenge(), sk.Public(), relayURL)
 	if err := evt.Sign(sk); err != nil {
 		c.t.Fatalf("sign auth: %v", err)
 	}

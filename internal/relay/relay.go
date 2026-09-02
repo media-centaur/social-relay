@@ -11,6 +11,7 @@ import (
 	"fiatjaf.com/nostr"
 	"fiatjaf.com/nostr/eventstore/boltdb"
 	"fiatjaf.com/nostr/khatru"
+	"fiatjaf.com/nostr/khatru/policies"
 )
 
 // maxQueryLimit caps how many stored events one filter may return.
@@ -30,6 +31,8 @@ func New(cfg Config) (*Relay, error) {
 	}
 
 	rl := khatru.NewRelay()
+	// khatru checks AUTH relay tags against this URL and serves only its path.
+	rl.ServiceURL = cfg.ServiceURL
 	rl.Info.Name = cfg.Name
 	rl.Info.Software = "https://github.com/media-centaur/social-relay"
 	rl.Info.SupportedNIPs = []any{1, 11, 42}
@@ -50,7 +53,7 @@ func New(cfg Config) (*Relay, error) {
 	members := newMembership(cfg.Members)
 	rl.OnConnect = members.challenge
 	rl.OnRequest = members.onRequest
-	rl.OnEvent = members.onEvent
+	rl.OnEvent = policies.SeqEvent(members.onEvent, onlyAcceptedKinds)
 
 	return &Relay{khatru: rl, store: store}, nil
 }
