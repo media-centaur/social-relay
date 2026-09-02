@@ -4,4 +4,4 @@ One markdown per multi-session initiative, removed when complete. Same conventio
 
 ## Active
 
-* [`private-relay-v1.md`](private-relay-v1.md) — **shipped as v0.1.0; GHCR package visibility left for the owner.** The first shippable relay: one container, a config file of member keys, NIP-42 gating of reads and writes, kind 32160 only, verified end to end against the dev app.
+None. `private-relay-v1` shipped as v0.1.0 on 2026-09-02; its decisions live in `decisions/`, its contract in `docs/protocol.md`, and its history in `git log`.
