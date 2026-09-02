@@ -5,6 +5,7 @@ go 1.27.0
 require (
 	fiatjaf.com/nostr v0.0.0-20260902034142-316ef6591fa2
 	github.com/BurntSushi/toml v1.6.0
+	github.com/coder/websocket v1.8.13
 )
 
 require (
@@ -15,7 +16,6 @@ require (
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4 // indirect
 	github.com/btcsuite/btcd/btcutil v1.1.5 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
-	github.com/coder/websocket v1.8.13 // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/fasthttp/websocket v1.5.12 // indirect

@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"fiatjaf.com/nostr"
 	"fiatjaf.com/nostr/nip11"
@@ -34,42 +33,13 @@ func startRelay(t *testing.T, members ...nostr.PubKey) string {
 	return "ws" + strings.TrimPrefix(srv.URL, "http")
 }
 
-func connect(t *testing.T, url string) *nostr.Relay {
+// connectAs dials the relay and authenticates as sk, failing the test if refused.
+func connectAs(t *testing.T, url string, sk nostr.SecretKey) *client {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	c, err := nostr.RelayConnect(ctx, url, nostr.RelayOptions{})
-	if err != nil {
-		t.Fatalf("connect %s: %v", url, err)
+	c := dial(t, url)
+	if ok, reason := c.auth(sk); !ok {
+		t.Fatalf("auth refused: %s", reason)
 	}
-	t.Cleanup(func() { c.Close() })
-	return c
-}
-
-// authenticate answers the relay's NIP-42 challenge with sk. The challenge is sent on
-// connect, so the first attempts may race it; retry until the client has one.
-func authenticate(t *testing.T, c *nostr.Relay, sk nostr.SecretKey) {
-	t.Helper()
-	deadline := time.Now().Add(5 * time.Second)
-	for {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		err := c.Auth(ctx, func(_ context.Context, evt *nostr.Event) error { return evt.Sign(sk) })
-		cancel()
-		if err == nil {
-			return
-		}
-		if !strings.Contains(err.Error(), "no challenge") || time.Now().After(deadline) {
-			t.Fatalf("auth: %v", err)
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-}
-
-// connectAs opens a connection and authenticates it as sk.
-func connectAs(t *testing.T, url string, sk nostr.SecretKey) *nostr.Relay {
-	t.Helper()
-	c := connect(t, url)
-	authenticate(t, c, sk)
 	return c
 }
 
@@ -87,43 +57,31 @@ func recommendation(t *testing.T, sk nostr.SecretKey, d string, createdAt nostr.
 	return evt
 }
 
-func publish(t *testing.T, c *nostr.Relay, evt nostr.Event) {
+func mustPublish(t *testing.T, c *client, evt nostr.Event) {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := c.Publish(ctx, evt); err != nil {
-		t.Fatalf("publish: %v", err)
+	if ok, reason := c.publish(evt); !ok {
+		t.Fatalf("publish refused: %s", reason)
 	}
 }
 
-// storedEvents issues a REQ and collects everything the relay returns before EOSE.
-func storedEvents(t *testing.T, c *nostr.Relay, filter nostr.Filter) []nostr.Event {
+// storedEvents issues a REQ and returns what the relay holds, failing on CLOSED.
+func storedEvents(t *testing.T, c *client, filter nostr.Filter) []nostr.Event {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	sub, err := c.Subscribe(ctx, filter, nostr.SubscriptionOptions{})
-	if err != nil {
-		t.Fatalf("subscribe: %v", err)
+	events, closed := c.request("stored", filter)
+	if closed != "" {
+		t.Fatalf("subscription closed: %s", closed)
 	}
-	var got []nostr.Event
-	for {
-		select {
-		case evt := <-sub.Events:
-			got = append(got, evt)
-		case <-sub.EndOfStoredEvents:
-			return got
-		case reason := <-sub.ClosedReason:
-			t.Fatalf("subscription closed: %s", reason)
-		case <-ctx.Done():
-			t.Fatalf("no EOSE within timeout; got %d events", len(got))
-		}
-	}
+	return events
+}
+
+func feedFilter(authors ...nostr.PubKey) nostr.Filter {
+	return nostr.Filter{Kinds: []nostr.Kind{kindRecommendation}, Authors: authors}
 }
 
 func TestRelayInformationDocumentNamesRelayAndSupportedNIPs(t *testing.T) {
-	url := startRelay(t)
+	url := startRelay(t, nostr.Generate().Public())
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), wait)
 	defer cancel()
 	info, err := nip11.Fetch(ctx, url)
 	if err != nil {
@@ -142,15 +100,11 @@ func TestRelayInformationDocumentNamesRelayAndSupportedNIPs(t *testing.T) {
 func TestStoresRecommendationAndReturnsItBeforeEOSE(t *testing.T) {
 	sk := nostr.Generate()
 	url := startRelay(t, sk.Public())
-	c := connectAs(t, url, sk)
 
 	evt := recommendation(t, sk, "tmdb:movie:1", nostr.Now())
-	publish(t, c, evt)
+	mustPublish(t, connectAs(t, url, sk), evt)
 
-	got := storedEvents(t, connectAs(t, url, sk), nostr.Filter{
-		Kinds:   []nostr.Kind{kindRecommendation},
-		Authors: []nostr.PubKey{sk.Public()},
-	})
+	got := storedEvents(t, connectAs(t, url, sk), feedFilter(sk.Public()))
 	if len(got) != 1 || got[0].ID != evt.ID {
 		t.Fatalf("got %d events %v, want exactly the published one", len(got), got)
 	}
@@ -163,13 +117,10 @@ func TestNewerEventWithSameAddressReplacesOlder(t *testing.T) {
 
 	older := recommendation(t, sk, "tmdb:tv:2", nostr.Now()-10)
 	newer := recommendation(t, sk, "tmdb:tv:2", nostr.Now())
-	publish(t, c, older)
-	publish(t, c, newer)
+	mustPublish(t, c, older)
+	mustPublish(t, c, newer)
 
-	got := storedEvents(t, connectAs(t, url, sk), nostr.Filter{
-		Kinds:   []nostr.Kind{kindRecommendation},
-		Authors: []nostr.PubKey{sk.Public()},
-	})
+	got := storedEvents(t, connectAs(t, url, sk), feedFilter(sk.Public()))
 	if len(got) != 1 || got[0].ID != newer.ID {
 		t.Fatalf("got %d events %v, want only the newer one", len(got), got)
 	}
@@ -179,11 +130,9 @@ func TestEmptyStoreAnswersWithEOSEOnly(t *testing.T) {
 	sk := nostr.Generate()
 	url := startRelay(t, sk.Public())
 
-	got := storedEvents(t, connectAs(t, url, sk), nostr.Filter{
-		Kinds:   []nostr.Kind{kindRecommendation},
-		Authors: []nostr.PubKey{sk.Public()},
-	})
+	got := storedEvents(t, connectAs(t, url, sk), feedFilter(sk.Public()))
 	if len(got) != 0 {
 		t.Fatalf("got %d events from an empty store", len(got))
 	}
 }
+
