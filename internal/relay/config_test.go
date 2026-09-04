@@ -36,8 +36,8 @@ admins = ["`+nip19.EncodeNpub(alice)+`", "`+nip19.EncodeNpub(bob)+`"]
 		t.Fatalf("LoadConfig: %v", err)
 	}
 	want := relay.Config{
-		Name:     "our relay",
-		Listen:   "127.0.0.1:2170",
+		Name:       "our relay",
+		Listen:     "127.0.0.1:2170",
 		Database:   "/data/events.db",
 		ServiceURL: "wss://relay.example",
 		Admins:     []nostr.PubKey{alice, bob},

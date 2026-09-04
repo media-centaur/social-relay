@@ -95,8 +95,8 @@ func TestRelayInformationDocumentNamesRelayAndSupportedNIPs(t *testing.T) {
 		t.Errorf("name = %q, want %q", info.Name, "test relay")
 	}
 	got := fmt.Sprint(info.SupportedNIPs)
-	if got != "[1 11 42 86]" {
-		t.Errorf("supported_nips = %s, want [1 11 42 86]", got)
+	if got != "[1 9 11 42 86]" {
+		t.Errorf("supported_nips = %s, want [1 9 11 42 86]", got)
 	}
 	if info.Version != testVersion {
 		t.Errorf("version = %q, want %q", info.Version, testVersion)
@@ -141,4 +141,3 @@ func TestEmptyStoreAnswersWithEOSEOnly(t *testing.T) {
 		t.Fatalf("got %d events from an empty store", len(got))
 	}
 }
-

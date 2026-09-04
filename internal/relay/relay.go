@@ -15,8 +15,9 @@ import (
 	"fiatjaf.com/nostr/khatru/policies"
 )
 
-// maxQueryLimit caps how many stored events one filter may return.
-const maxQueryLimit = 1000
+// maxQueryLimit caps how many stored events one filter may return. The app pages in
+// batches of 500 and treats a full batch as "ask again with until".
+const maxQueryLimit = 500
 
 // Relay is an http.Handler serving the WebSocket endpoint and the NIP-11 document.
 type Relay struct {
@@ -38,19 +39,21 @@ func New(version string, cfg Config) (*Relay, error) {
 	rl.Info.Name = cfg.Name
 	rl.Info.Software = "https://github.com/media-centaur/social-relay"
 	rl.Info.Version = version
-	rl.Info.SupportedNIPs = []any{1, 11, 42, 86}
+	// NIP-9 is listed by hand: deletion is handled by the address slot below, not by
+	// khatru's DeleteEvent path, which cannot keep one record per address (ADR-002).
+	rl.Info.SupportedNIPs = []any{1, 9, 11, 42, 86}
 
 	// Wired by hand rather than through UseEventstore: setting DeleteEvent or Count
-	// makes khatru advertise NIP-9 and NIP-45, neither of which this relay offers.
+	// makes khatru run its own NIP-9 handler and advertise NIP-45.
 	rl.QueryStored = func(ctx context.Context, filter nostr.Filter) iter.Seq[nostr.Event] {
 		return store.QueryEvents(filter, maxQueryLimit)
 	}
+	records := &slot{store: store}
 	rl.StoreEvent = func(ctx context.Context, event nostr.Event) error {
-		return store.SaveEvent(event)
+		return records.storeDeletion(event)
 	}
 	rl.ReplaceEvent = func(ctx context.Context, event nostr.Event) error {
-		_, err := store.ReplaceEvent(event)
-		return err
+		return records.storeRecommendation(event)
 	}
 
 	members, err := newMembership(cfg.Admins, store.DB)
