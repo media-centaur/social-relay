@@ -4,7 +4,7 @@
 
 The allowlist Nostr relay for Media Centaur's **Social** subsystem (identity, relays, friends, recommendations). A friend group runs one instance; each member pastes its URL into Media Centaur's Social tab; only allowlisted public keys can read or write, and only the event kinds Media Centaur uses are stored. This is the **private relay** half of the app's "control on a slider" design. Public relays are the other half and are not this repo's concern.
 
-The client is `MediaCentaur.Nostr` and `MediaCentaur.Social` in the sibling repo `../media-centaur-app`. Its side of the contract is documented in `../media-centaur-app/docs/social.md` (sections Transport, Event shape, Sync). This repo's side lives in `docs/protocol.md` once written. The two must agree; when one changes, change the other in the same unit of work.
+The client is `MediaCentaur.Nostr` and `MediaCentaur.Social` in the sibling repo `../media-centaur-app`. The shared wire contract is `../media-centaur-app/docs/social-protocol.md` (wiki page *Social Protocol*); this repo's `docs/protocol.md` states only what the relay adds. The two must agree; when one changes, change the other in the same unit of work.
 
 ## Stack
 
