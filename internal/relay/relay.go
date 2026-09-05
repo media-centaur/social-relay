@@ -53,7 +53,7 @@ func New(version string, cfg Config) (*Relay, error) {
 		return records.storeDeletion(event)
 	}
 	rl.ReplaceEvent = func(ctx context.Context, event nostr.Event) error {
-		return records.storeRecommendation(event)
+		return records.storeActivity(event)
 	}
 
 	members, err := newMembership(cfg.Admins, store.DB)

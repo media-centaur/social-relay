@@ -1,6 +1,6 @@
 # Protocol
 
-The relay's side of the contract with Media Centaur. The shared rules live on the app's contract page, `docs/social-protocol.md` in the app repository (wiki page *Social Protocol*): kind numbers, the shape of a recommendation (kind 32160) and a deletion (kind 5), the address-slot rules, and the subscriptions and paging the app performs. This page states only what the relay adds: membership, administration, and the order in which verdicts are reached. When one changes, change the other in the same unit of work.
+The relay's side of the contract with Media Centaur. The shared rules live on the app's contract page, `docs/social-protocol.md` in the app repository (wiki page *Social Protocol*): kind numbers, the shape of each activity (a recommendation, kind 32160; a watched title, 32161; a tracked release, 32162) and a deletion (kind 5), the address-slot rules, and the subscriptions and paging the app performs. This page states only what the relay adds: membership, administration, and the order in which verdicts are reached. When one changes, change the other in the same unit of work.
 
 The relay implements NIP-01 (events, filters, subscriptions), NIP-09 (deletion, address form only), NIP-11 (relay information document), NIP-42 (client authentication) and NIP-86 (relay management), and nothing else. Every rejection reason is a fixed string; clients match on the prefix before the colon, as NIP-01 specifies. The strings are the contract page's, byte for byte.
 
@@ -51,12 +51,12 @@ The verdicts, in the order they are checked. The first that applies is the answe
 | Not authenticated | `["OK", "<id>", false, "auth-required: authenticate to write to this relay"]` |
 | Authenticated, key not a member | `["OK", "<id>", false, "restricted: this key is not a member of this relay"]` |
 | Event's `pubkey` not a member | `["OK", "<id>", false, "restricted: the event author is not a member of this relay"]` |
-| Kind other than `32160` or `5` | `["OK", "<id>", false, "blocked: kind <n> is not stored by this relay"]` |
-| Kind `5` without exactly one `a` tag of kind `32160` naming the signer's own pubkey | `["OK", "<id>", false, "blocked: only the author may delete an event"]` |
-| Kind `32160` created at or before the deletion stored for its address | `["OK", "<id>", false, "blocked: a newer deletion exists for this address"]` |
+| Kind other than `32160`, `32161`, `32162` or `5` | `["OK", "<id>", false, "blocked: kind <n> is not stored by this relay"]` |
+| Kind `5` without exactly one `a` tag of an activity kind naming the signer's own pubkey | `["OK", "<id>", false, "blocked: only the author may delete an event"]` |
+| An activity created at or before the deletion stored for its address | `["OK", "<id>", false, "blocked: a newer deletion exists for this address"]` |
 | Stored, or discarded because the address holds something newer | `["OK", "<id>", true, ""]` |
 
-**The address slot.** An address `32160:<pubkey>:<d>` holds one record: the signer's recommendation or the deletion that withdrew it, never both and never two of either. A newer `created_at` takes the slot from whatever holds it. On equal `created_at`, a deletion beats a recommendation (contract rule 2) and otherwise the stored record stays. A discarded event is answered `OK true` and is not pushed to open subscriptions, because the relay does not hold it. A deletion for an address the relay never held is stored as the tombstone.
+**The address slot.** An address `<kind>:<pubkey>:<d>` holds one record: the signer's activity of that kind or the deletion that withdrew it, never both and never two of either. The kind is part of the address, so one signer's recommendation, watched and tracking records for one title are three slots. A newer `created_at` takes the slot from whatever holds it. On equal `created_at`, a deletion beats an activity (contract rule 2) and otherwise the stored record stays. A discarded event is answered `OK true` and is not pushed to open subscriptions, because the relay does not hold it. A deletion for an address the relay never held is stored as the tombstone.
 
 The relay never reads content. The `d` tag layout and the content JSON are the app's business.
 

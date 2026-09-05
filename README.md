@@ -1,6 +1,6 @@
 # social-relay
 
-Private Nostr relay for [Media Centaur](https://github.com/media-centaur/media-centaur)'s Social feature. One friend group, one instance. Only members read or write; admins add members at runtime; only recommendations (kind 32160) and their deletions (kind 5) are stored.
+Private Nostr relay for [Media Centaur](https://github.com/media-centaur/media-centaur)'s Social feature. One friend group, one instance. Only members read or write; admins add members at runtime; only Media Centaur's activities — recommendations (kind 32160), watched titles (32161), tracked releases (32162) — and their deletions (kind 5) are stored.
 
 One static binary or container image. TLS is the reverse proxy's job.
 

@@ -1,6 +1,7 @@
 package relay_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -29,11 +30,54 @@ func TestMemberCannotPublishOtherKinds(t *testing.T) {
 	}
 }
 
-func TestRecommendationKindIsAccepted(t *testing.T) {
+func TestActivityKindsAreAccepted(t *testing.T) {
 	member := nostr.Generate()
 	url := startRelay(t, member.Public())
+	c := connectAs(t, url, member)
 
-	if ok, reason := connectAs(t, url, member).publish(signedKind(t, member, kindRecommendation)); !ok {
-		t.Fatalf("kind 32160 refused: %s", reason)
+	for _, kind := range []nostr.Kind{kindRecommendation, kindWatched, kindTracking} {
+		if ok, reason := c.publish(signedKind(t, member, kind)); !ok {
+			t.Errorf("kind %d refused: %s", kind, reason)
+		}
+	}
+}
+
+// One title, three kinds: three slots, each keeping its own record.
+func TestKindsHoldSeparateSlotsForOneTitle(t *testing.T) {
+	member := nostr.Generate()
+	url := startRelay(t, member.Public())
+	c := connectAs(t, url, member)
+
+	for _, kind := range []nostr.Kind{kindRecommendation, kindWatched, kindTracking} {
+		if ok, reason := c.publish(signedKind(t, member, kind)); !ok {
+			t.Fatalf("kind %d refused: %s", kind, reason)
+		}
+	}
+
+	got := storedEvents(t, connectAs(t, url, member), nostr.Filter{
+		Kinds: []nostr.Kind{kindRecommendation, kindWatched, kindTracking}, Authors: []nostr.PubKey{member.Public()},
+	})
+	if len(got) != 3 {
+		t.Fatalf("got %d events, want one per kind", len(got))
+	}
+}
+
+// A deletion names the kind it withdraws; the other kinds' records stay.
+func TestDeletionWithdrawsOnlyItsOwnKind(t *testing.T) {
+	member := nostr.Generate()
+	url := startRelay(t, member.Public())
+	c := connectAs(t, url, member)
+
+	for _, kind := range []nostr.Kind{kindRecommendation, kindWatched} {
+		mustPublish(t, c, signedKind(t, member, kind))
+	}
+	addr := fmt.Sprintf("%d:%s:%s", kindWatched, member.Public().Hex(), "tmdb:movie:1")
+	mustPublish(t, c, deletion(t, member, addr, nostr.Now()+1))
+
+	got := storedEvents(t, connectAs(t, url, member), nostr.Filter{
+		Kinds: []nostr.Kind{kindRecommendation, kindWatched}, Authors: []nostr.PubKey{member.Public()},
+	})
+	if len(got) != 1 || got[0].Kind != kindRecommendation {
+		t.Fatalf("got %v, want only the recommendation left", got)
 	}
 }
