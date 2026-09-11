@@ -31,3 +31,14 @@ A change that alters what the relay accepts, how it authenticates, or what it an
 ## Vocabulary
 
 The app's glossary (`../media-centaur-app/docs/GLOSSARY.md`) governs. **Social** is the subsystem; a **friend** is one roster entry; a **member** is a key on this relay's allowlist. Do not use "friends" for the subsystem.
+
+## Releasing
+
+Releases are tag-driven; there is no version file and no changelog. `scripts/build-release` stamps the version from the tag through `-ldflags`, and `.github/workflows/release.yml` runs on every `v*` tag: it runs `scripts/check`, attaches the two Linux binaries plus `SHA256SUMS` to a GitHub release with auto-generated notes, and pushes the image to `ghcr.io/media-centaur/social-relay` tagged `<version>` and `latest`.
+
+1. `scripts/check` green locally. Tree clean, `main` not behind `origin/main`.
+2. `git push origin main`.
+3. Annotated tag, message `v<version>: <one line>` in the style of `git tag -n1`. Minor bump for anything that changes what the relay accepts or answers (a kind, an auth rule, a rejection message); patch for everything else.
+4. `git push origin v<version>`, then `gh run watch` the release run and confirm `gh release view v<version>` lists the three assets and `docker manifest inspect ghcr.io/media-centaur/social-relay:<version>` succeeds.
+
+Deploying a specific instance is not this repo's concern. An operator's own instance is a separate deployment repo that pins the image tag; upgrade it after the image exists.
