@@ -13,7 +13,7 @@ import (
 const (
 	kindRecommendation nostr.Kind = 32160
 	kindWatched        nostr.Kind = 32161
-	kindTracking       nostr.Kind = 32162
+	kindListing        nostr.Kind = 32163
 )
 
 // kindDeletion withdraws an activity of any kind (NIP-09), restricted to the address
@@ -24,7 +24,7 @@ const kindDeletion nostr.Kind = 5
 var activityKinds = map[nostr.Kind]struct{}{
 	kindRecommendation: {},
 	kindWatched:        {},
-	kindTracking:       {},
+	kindListing:        {},
 }
 
 // acceptedKinds is everything the relay stores. NIP-42 AUTH (kind 22242) never

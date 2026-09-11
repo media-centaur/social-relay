@@ -17,7 +17,7 @@ import (
 const (
 	kindRecommendation = nostr.Kind(32160)
 	kindWatched        = nostr.Kind(32161)
-	kindTracking       = nostr.Kind(32162)
+	kindListing        = nostr.Kind(32163)
 	testVersion        = "v0.0.0-test"
 )
 

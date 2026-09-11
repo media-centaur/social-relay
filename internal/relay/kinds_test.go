@@ -22,7 +22,9 @@ func TestMemberCannotPublishOtherKinds(t *testing.T) {
 	url := startRelay(t, member.Public())
 	c := connectAs(t, url, member)
 
-	for _, kind := range []nostr.Kind{1, 5, 30023} {
+	// 32162 (tracking) is retired: numbers are never reused, and the relay no
+	// longer stores it.
+	for _, kind := range []nostr.Kind{1, 5, 30023, 32162} {
 		ok, reason := c.publish(signedKind(t, member, kind))
 		if ok || !strings.HasPrefix(reason, "blocked: ") {
 			t.Errorf("kind %d: OK = %v %q, want false with blocked: prefix", kind, ok, reason)
@@ -35,7 +37,7 @@ func TestActivityKindsAreAccepted(t *testing.T) {
 	url := startRelay(t, member.Public())
 	c := connectAs(t, url, member)
 
-	for _, kind := range []nostr.Kind{kindRecommendation, kindWatched, kindTracking} {
+	for _, kind := range []nostr.Kind{kindRecommendation, kindWatched, kindListing} {
 		if ok, reason := c.publish(signedKind(t, member, kind)); !ok {
 			t.Errorf("kind %d refused: %s", kind, reason)
 		}
@@ -48,14 +50,14 @@ func TestKindsHoldSeparateSlotsForOneTitle(t *testing.T) {
 	url := startRelay(t, member.Public())
 	c := connectAs(t, url, member)
 
-	for _, kind := range []nostr.Kind{kindRecommendation, kindWatched, kindTracking} {
+	for _, kind := range []nostr.Kind{kindRecommendation, kindWatched, kindListing} {
 		if ok, reason := c.publish(signedKind(t, member, kind)); !ok {
 			t.Fatalf("kind %d refused: %s", kind, reason)
 		}
 	}
 
 	got := storedEvents(t, connectAs(t, url, member), nostr.Filter{
-		Kinds: []nostr.Kind{kindRecommendation, kindWatched, kindTracking}, Authors: []nostr.PubKey{member.Public()},
+		Kinds: []nostr.Kind{kindRecommendation, kindWatched, kindListing}, Authors: []nostr.PubKey{member.Public()},
 	})
 	if len(got) != 3 {
 		t.Fatalf("got %d events, want one per kind", len(got))
