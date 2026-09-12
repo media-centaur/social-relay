@@ -45,7 +45,7 @@ func TestAdminAllowsAKeyWhichCanThenReadAndWrite(t *testing.T) {
 	if _, closed := c.request("feed", feedFilter(admin.Public())); closed != "" {
 		t.Fatalf("after allow: CLOSED = %q, want stored events and EOSE", closed)
 	}
-	if ok, reason := c.publish(recommendation(t, friend, "tmdb:movie:1", nostr.Now())); !ok {
+	if ok, reason := c.publish(review(t, friend, "tmdb:movie:1", nostr.Now())); !ok {
 		t.Fatalf("after allow: publish refused: %s", reason)
 	}
 }
@@ -70,7 +70,7 @@ func TestUnallowedKeyIsRestrictedAndReceivesNoLiveEvents(t *testing.T) {
 	// khatru delivers live events synchronously before answering the publisher's OK,
 	// so once the admin has its OK the removed socket has either received the event
 	// or never will. Its next frame must therefore be the CLOSED for this REQ.
-	mustPublish(t, connectAs(t, url, admin), recommendation(t, admin, "tmdb:movie:1", nostr.Now()))
+	mustPublish(t, connectAs(t, url, admin), review(t, admin, "tmdb:movie:1", nostr.Now()))
 	c.send(nostr.ReqEnvelope{SubscriptionID: "again", Filters: []nostr.Filter{feedFilter(admin.Public())}})
 	switch env := c.read().(type) {
 	case *nostr.ClosedEnvelope:
@@ -82,7 +82,7 @@ func TestUnallowedKeyIsRestrictedAndReceivesNoLiveEvents(t *testing.T) {
 	default:
 		t.Fatalf("unexpected %#v after unallow", env)
 	}
-	if ok, reason := c.publish(recommendation(t, friend, "tmdb:movie:2", nostr.Now())); ok || !strings.HasPrefix(reason, "restricted: ") {
+	if ok, reason := c.publish(review(t, friend, "tmdb:movie:2", nostr.Now())); ok || !strings.HasPrefix(reason, "restricted: ") {
 		t.Errorf("after unallow: OK = %v %q, want false with restricted:", ok, reason)
 	}
 }

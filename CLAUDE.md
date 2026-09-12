@@ -2,7 +2,7 @@
 
 # social-relay
 
-The allowlist Nostr relay for Media Centaur's **Social** subsystem (identity, relays, friends, recommendations). A friend group runs one instance; each member pastes its URL into Media Centaur's Social tab; only allowlisted public keys can read or write, and only the event kinds Media Centaur uses are stored. This is the **private relay** half of the app's "control on a slider" design. Public relays are the other half and are not this repo's concern.
+The allowlist Nostr relay for Media Centaur's **Social** subsystem (identity, relays, friends, reviews). A friend group runs one instance; each member pastes its URL into Media Centaur's Social tab; only allowlisted public keys can read or write, and only the event kinds Media Centaur uses are stored. This is the **private relay** half of the app's "control on a slider" design. Public relays are the other half and are not this repo's concern.
 
 The client is `MediaCentaur.Nostr` and `MediaCentaur.Social` in the sibling repo `../media-centaur-app`. The shared wire contract is `../media-centaur-app/docs/social-protocol.md` (wiki page *Social Protocol*); this repo's `docs/protocol.md` states only what the relay adds. The two must agree; when one changes, change the other in the same unit of work.
 
@@ -24,7 +24,7 @@ The client is `MediaCentaur.Nostr` and `MediaCentaur.Social` in the sibling repo
 
 ## Cross-repo verification
 
-The app's dev server runs at `http://localhost:2160` (systemd user unit `media-centaur-dev`, real database). `scripts/dev-relay up <npub>...` builds this working tree into `social-relay:dev` and runs it in Docker on `ws://127.0.0.1:2173` with those members (`down`, `reset`, `status`; no arguments prints usage). The app drives it through `just social-*` recipes, which also supply a scripted second member (`mix social.dev` there). End-to-end check for any change that touches authentication or acceptance: `scripts/dev-relay up` with the app's npub, confirm the relay log shows the app's public key authenticating and the app's Status page Social tile reads connected, then `just social-recommend …` from the app repo and check the app's Feed.
+The app's dev server runs at `http://localhost:2160` (systemd user unit `media-centaur-dev`, real database). `scripts/dev-relay up <npub>...` builds this working tree into `social-relay:dev` and runs it in Docker on `ws://127.0.0.1:2173` with those members (`down`, `reset`, `status`; no arguments prints usage). The app drives it through `just social-*` recipes, which also supply a scripted second member (`mix social.dev` there). End-to-end check for any change that touches authentication or acceptance: `scripts/dev-relay up` with the app's npub, confirm the relay log shows the app's public key authenticating and the app's Status page Social tile reads connected, then `just social-review …` from the app repo and check the app's Feed.
 
 A change that alters what the relay accepts, how it authenticates, or what it answers on rejection is a cross-repo change. Record it in the campaign under **Cross-repo** so the app-side work is not lost.
 

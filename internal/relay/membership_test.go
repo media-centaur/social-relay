@@ -29,7 +29,7 @@ func TestUnauthenticatedEventIsRefusedWithAuthRequired(t *testing.T) {
 	member := nostr.Generate()
 	url := startRelay(t, member.Public())
 
-	ok, reason := dial(t, url).publish(recommendation(t, member, "tmdb:movie:1", nostr.Now()))
+	ok, reason := dial(t, url).publish(review(t, member, "tmdb:movie:1", nostr.Now()))
 	if ok || !strings.HasPrefix(reason, "auth-required: ") {
 		t.Errorf("OK = %v %q, want false with auth-required: prefix", ok, reason)
 	}
@@ -45,7 +45,7 @@ func TestNonMemberAuthenticatesButIsRestricted(t *testing.T) {
 	if !strings.HasPrefix(closed, "restricted: ") {
 		t.Errorf("CLOSED reason = %q, want restricted: prefix", closed)
 	}
-	ok, reason := c.publish(recommendation(t, outsider, "tmdb:movie:1", nostr.Now()))
+	ok, reason := c.publish(review(t, outsider, "tmdb:movie:1", nostr.Now()))
 	if ok || !strings.HasPrefix(reason, "restricted: ") {
 		t.Errorf("OK = %v %q, want false with restricted: prefix", ok, reason)
 	}
@@ -55,26 +55,26 @@ func TestMemberCannotPublishAnOutsidersEvent(t *testing.T) {
 	member, outsider := nostr.Generate(), nostr.Generate()
 	url := startRelay(t, member.Public())
 
-	ok, reason := connectAs(t, url, member).publish(recommendation(t, outsider, "tmdb:movie:1", nostr.Now()))
+	ok, reason := connectAs(t, url, member).publish(review(t, outsider, "tmdb:movie:1", nostr.Now()))
 	if ok || !strings.HasPrefix(reason, "restricted: ") {
 		t.Errorf("OK = %v %q, want false with restricted: prefix", ok, reason)
 	}
 }
 
-func TestMemberReadsAnotherMembersRecommendation(t *testing.T) {
+func TestMemberReadsAnotherMembersReview(t *testing.T) {
 	alice, bob := nostr.Generate(), nostr.Generate()
 	url := startRelay(t, alice.Public(), bob.Public())
 
-	evt := recommendation(t, alice, "tmdb:movie:1", nostr.Now())
+	evt := review(t, alice, "tmdb:movie:1", nostr.Now())
 	mustPublish(t, connectAs(t, url, alice), evt)
 
 	got := storedEvents(t, connectAs(t, url, bob), feedFilter(alice.Public(), bob.Public()))
 	if len(got) != 1 || got[0].ID != evt.ID {
-		t.Fatalf("got %d events, want alice's recommendation", len(got))
+		t.Fatalf("got %d events, want alice's review", len(got))
 	}
 }
 
-func TestMemberReceivesLiveRecommendationFromAnotherMember(t *testing.T) {
+func TestMemberReceivesLiveReviewFromAnotherMember(t *testing.T) {
 	alice, bob := nostr.Generate(), nostr.Generate()
 	url := startRelay(t, alice.Public(), bob.Public())
 
@@ -83,7 +83,7 @@ func TestMemberReceivesLiveRecommendationFromAnotherMember(t *testing.T) {
 		t.Fatalf("subscription closed: %s", closed)
 	}
 
-	evt := recommendation(t, alice, "tmdb:movie:1", nostr.Now())
+	evt := review(t, alice, "tmdb:movie:1", nostr.Now())
 	mustPublish(t, connectAs(t, url, alice), evt)
 
 	if got := reader.readEvent("feed"); got.ID != evt.ID {

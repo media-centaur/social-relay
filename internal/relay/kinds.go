@@ -9,11 +9,14 @@ import (
 
 // The app's addressable activity kinds. The relay stores them and never interprets
 // them; their shape is the app's contract (docs/protocol.md). Every one shares the
-// address slot rules: one record per signer per kind per `d` tag.
+// address slot rules: one record per signer per kind per `d` tag. The stored kinds
+// are a review (32164), a watched title (32161) and a listing (32163). 32160
+// (recommendation) and 32162 (tracking) are retired: never reused, refused with
+// `blocked:`.
 const (
-	kindRecommendation nostr.Kind = 32160
-	kindWatched        nostr.Kind = 32161
-	kindListing        nostr.Kind = 32163
+	kindReview  nostr.Kind = 32164
+	kindWatched nostr.Kind = 32161
+	kindListing nostr.Kind = 32163
 )
 
 // kindDeletion withdraws an activity of any kind (NIP-09), restricted to the address
@@ -22,9 +25,9 @@ const kindDeletion nostr.Kind = 5
 
 // activityKinds is the single place to widen what the relay stores as an activity.
 var activityKinds = map[nostr.Kind]struct{}{
-	kindRecommendation: {},
-	kindWatched:        {},
-	kindListing:        {},
+	kindReview:  {},
+	kindWatched: {},
+	kindListing: {},
 }
 
 // acceptedKinds is everything the relay stores. NIP-42 AUTH (kind 22242) never

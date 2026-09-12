@@ -14,7 +14,7 @@ import (
 
 // address is <kind>:<pubkey>:<d> for an activity, the NIP-01 addressable form and
 // the value of a deletion's `a` tag. The kind is part of the address: a signer's
-// recommendation and their watched activity for one title are two slots.
+// review and their watched activity for one title are two slots.
 type address struct {
 	kind   nostr.Kind
 	pubkey nostr.PubKey

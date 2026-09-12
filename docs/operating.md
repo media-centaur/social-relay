@@ -125,9 +125,9 @@ social-relay members -relay wss://relay.example.com list
 
 Without a local binary, the image runs the same subcommand from any machine: `docker run --rm -e SOCIAL_RELAY_ADMIN_KEY ghcr.io/media-centaur/social-relay members -relay wss://relay.example.com ...`, with the variable set in the calling shell.
 
-Changes apply at once. A newly allowed member whose Media Centaur is already connected starts reading on its next request; nobody reconnects. A removed member's open connection stops receiving events immediately and their next request is refused. Their earlier recommendations stay in the database until they are replaced; nobody can delete them.
+Changes apply at once. A newly allowed member whose Media Centaur is already connected starts reading on its next request; nobody reconnects. A removed member's open connection stops receiving events immediately and their next request is refused. Their earlier reviews stay in the database until they are replaced; nobody can delete them.
 
-The relay stores one recommendation per member per title. Recommending the same title again replaces the earlier event, so the database grows with members × titles and nothing else.
+The relay stores one review per member per title. Reviewing the same title again replaces the earlier event, so the database grows with members × titles and nothing else.
 
 ## Logs
 
@@ -150,7 +150,7 @@ Stop the relay, copy the database file, start it again:
 docker compose stop relay && docker run --rm -v relay-data:/data -v "$PWD":/backup alpine cp /data/events.db /backup/ && docker compose start relay
 ```
 
-Losing the database is not fatal. Every member's Media Centaur keeps its own recommendations and republishes any the relay lacks the next time it connects, so a fresh database refills from the members within a minute of them reconnecting.
+Losing the database is not fatal. Every member's Media Centaur keeps its own activities and republishes any the relay lacks the next time it connects, so a fresh database refills from the members within a minute of them reconnecting.
 
 ## Upgrading
 
@@ -165,4 +165,4 @@ What the member sees on their relay row, and what it means on this side.
 | **Rejected** | Their authentication was refused. Almost always `service_url` differs from the address they typed: `ws://` against `wss://`, a different host, or a path on one side only. | Make `service_url` and the address members type identical. Then the member removes and re-adds the relay. |
 | **Connected** with *restricted: this key is not a member of this relay* | Their key authenticated but is not a member. The log shows `authenticated npub1… (not a member)`. | `social-relay members add <npub>`. No restart. |
 | **Not connected** | The proxy, DNS or TLS is not in place, or the proxy does not forward WebSocket upgrades. | Run the `curl` check from the Compose steps. A JSON document means the relay and proxy are fine and the problem is the WebSocket upgrade; anything else is DNS, TLS or the proxy itself. |
-| **Connected**, but a friend's recommendations never arrive | The friend is not a member, or the friend has not added this relay. | Both must be members and both must have added the relay. `social-relay members list` shows who is. |
+| **Connected**, but a friend's activities never arrive | The friend is not a member, or the friend has not added this relay. | Both must be members and both must have added the relay. `social-relay members list` shows who is. |

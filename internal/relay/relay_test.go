@@ -15,10 +15,10 @@ import (
 )
 
 const (
-	kindRecommendation = nostr.Kind(32160)
-	kindWatched        = nostr.Kind(32161)
-	kindListing        = nostr.Kind(32163)
-	testVersion        = "v0.0.0-test"
+	kindReview  = nostr.Kind(32164)
+	kindWatched = nostr.Kind(32161)
+	kindListing = nostr.Kind(32163)
+	testVersion = "v0.0.0-test"
 )
 
 // startRelay runs an in-process relay on a loopback port and returns its ws:// URL.
@@ -48,10 +48,10 @@ func connectAs(t *testing.T, url string, sk nostr.SecretKey) *client {
 	return c
 }
 
-func recommendation(t *testing.T, sk nostr.SecretKey, d string, createdAt nostr.Timestamp) nostr.Event {
+func review(t *testing.T, sk nostr.SecretKey, d string, createdAt nostr.Timestamp) nostr.Event {
 	t.Helper()
 	evt := nostr.Event{
-		Kind:      kindRecommendation,
+		Kind:      kindReview,
 		CreatedAt: createdAt,
 		Tags:      nostr.Tags{{"d", d}},
 		Content:   `{"title":"Placeholder Title"}`,
@@ -80,7 +80,7 @@ func storedEvents(t *testing.T, c *client, filter nostr.Filter) []nostr.Event {
 }
 
 func feedFilter(authors ...nostr.PubKey) nostr.Filter {
-	return nostr.Filter{Kinds: []nostr.Kind{kindRecommendation}, Authors: authors}
+	return nostr.Filter{Kinds: []nostr.Kind{kindReview}, Authors: authors}
 }
 
 func TestRelayInformationDocumentNamesRelayAndSupportedNIPs(t *testing.T) {
@@ -105,11 +105,11 @@ func TestRelayInformationDocumentNamesRelayAndSupportedNIPs(t *testing.T) {
 	}
 }
 
-func TestStoresRecommendationAndReturnsItBeforeEOSE(t *testing.T) {
+func TestStoresReviewAndReturnsItBeforeEOSE(t *testing.T) {
 	sk := nostr.Generate()
 	url := startRelay(t, sk.Public())
 
-	evt := recommendation(t, sk, "tmdb:movie:1", nostr.Now())
+	evt := review(t, sk, "tmdb:movie:1", nostr.Now())
 	mustPublish(t, connectAs(t, url, sk), evt)
 
 	got := storedEvents(t, connectAs(t, url, sk), feedFilter(sk.Public()))
@@ -123,8 +123,8 @@ func TestNewerEventWithSameAddressReplacesOlder(t *testing.T) {
 	url := startRelay(t, sk.Public())
 	c := connectAs(t, url, sk)
 
-	older := recommendation(t, sk, "tmdb:tv:2", nostr.Now()-10)
-	newer := recommendation(t, sk, "tmdb:tv:2", nostr.Now())
+	older := review(t, sk, "tmdb:tv:2", nostr.Now()-10)
+	newer := review(t, sk, "tmdb:tv:2", nostr.Now())
 	mustPublish(t, c, older)
 	mustPublish(t, c, newer)
 

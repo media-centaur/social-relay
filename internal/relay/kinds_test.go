@@ -22,12 +22,26 @@ func TestMemberCannotPublishOtherKinds(t *testing.T) {
 	url := startRelay(t, member.Public())
 	c := connectAs(t, url, member)
 
-	// 32162 (tracking) is retired: numbers are never reused, and the relay no
-	// longer stores it.
-	for _, kind := range []nostr.Kind{1, 5, 30023, 32162} {
+	for _, kind := range []nostr.Kind{1, 5, 30023} {
 		ok, reason := c.publish(signedKind(t, member, kind))
 		if ok || !strings.HasPrefix(reason, "blocked: ") {
 			t.Errorf("kind %d: OK = %v %q, want false with blocked: prefix", kind, ok, reason)
+		}
+	}
+}
+
+// 32160 (recommendation) and 32162 (tracking) are retired: numbers are never
+// reused, and the relay no longer stores them.
+func TestRetiredKindsAreRefused(t *testing.T) {
+	member := nostr.Generate()
+	url := startRelay(t, member.Public())
+	c := connectAs(t, url, member)
+
+	for _, kind := range []nostr.Kind{32160, 32162} {
+		want := fmt.Sprintf("blocked: kind %d is not stored by this relay", kind)
+		ok, reason := c.publish(signedKind(t, member, kind))
+		if ok || reason != want {
+			t.Errorf("kind %d: OK = %v %q, want false with %q", kind, ok, reason, want)
 		}
 	}
 }
@@ -37,7 +51,7 @@ func TestActivityKindsAreAccepted(t *testing.T) {
 	url := startRelay(t, member.Public())
 	c := connectAs(t, url, member)
 
-	for _, kind := range []nostr.Kind{kindRecommendation, kindWatched, kindListing} {
+	for _, kind := range []nostr.Kind{kindReview, kindWatched, kindListing} {
 		if ok, reason := c.publish(signedKind(t, member, kind)); !ok {
 			t.Errorf("kind %d refused: %s", kind, reason)
 		}
@@ -50,14 +64,14 @@ func TestKindsHoldSeparateSlotsForOneTitle(t *testing.T) {
 	url := startRelay(t, member.Public())
 	c := connectAs(t, url, member)
 
-	for _, kind := range []nostr.Kind{kindRecommendation, kindWatched, kindListing} {
+	for _, kind := range []nostr.Kind{kindReview, kindWatched, kindListing} {
 		if ok, reason := c.publish(signedKind(t, member, kind)); !ok {
 			t.Fatalf("kind %d refused: %s", kind, reason)
 		}
 	}
 
 	got := storedEvents(t, connectAs(t, url, member), nostr.Filter{
-		Kinds: []nostr.Kind{kindRecommendation, kindWatched, kindListing}, Authors: []nostr.PubKey{member.Public()},
+		Kinds: []nostr.Kind{kindReview, kindWatched, kindListing}, Authors: []nostr.PubKey{member.Public()},
 	})
 	if len(got) != 3 {
 		t.Fatalf("got %d events, want one per kind", len(got))
@@ -70,16 +84,16 @@ func TestDeletionWithdrawsOnlyItsOwnKind(t *testing.T) {
 	url := startRelay(t, member.Public())
 	c := connectAs(t, url, member)
 
-	for _, kind := range []nostr.Kind{kindRecommendation, kindWatched} {
+	for _, kind := range []nostr.Kind{kindReview, kindWatched} {
 		mustPublish(t, c, signedKind(t, member, kind))
 	}
 	addr := fmt.Sprintf("%d:%s:%s", kindWatched, member.Public().Hex(), "tmdb:movie:1")
 	mustPublish(t, c, deletion(t, member, addr, nostr.Now()+1))
 
 	got := storedEvents(t, connectAs(t, url, member), nostr.Filter{
-		Kinds: []nostr.Kind{kindRecommendation, kindWatched}, Authors: []nostr.PubKey{member.Public()},
+		Kinds: []nostr.Kind{kindReview, kindWatched}, Authors: []nostr.PubKey{member.Public()},
 	})
-	if len(got) != 1 || got[0].Kind != kindRecommendation {
-		t.Fatalf("got %v, want only the recommendation left", got)
+	if len(got) != 1 || got[0].Kind != kindReview {
+		t.Fatalf("got %v, want only the review left", got)
 	}
 }
